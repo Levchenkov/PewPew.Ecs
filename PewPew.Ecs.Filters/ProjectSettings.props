@@ -1,0 +1,5 @@
+<Project>
+    <PropertyGroup>
+        <DefineConstants>$(DefineConstants);HEAVY_FILTERS_ENABLED;BIT_MASK_64_DEFAULT</DefineConstants>
+    </PropertyGroup>
+</Project>

@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <LangVersion>latest</LangVersion>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" PrivateAssets="all" />
+        <PackageReference Include="System.CodeDom" Version="8.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="EntityIdTemplate.tt">
+        <Generator>TextTemplatingFilePreprocessor</Generator>
+        <LastGenOutput>EntityIdTemplate.cs</LastGenOutput>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="EntityIdTemplate.cs">
+        <DependentUpon>EntityIdTemplate.tt</DependentUpon>
+      </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="..\PewPew.Ecs.Core\EntityId.cs">
+        <Link>EntityId.cs</Link>
+      </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="..\PewPew.Ecs.Hybrid\Internals\StaticArchetypeInstance.cs">
+            <Link>StaticArchetypeInstance.cs</Link>
+        </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="..\PewPew.Ecs.Hybrid\StaticArchetype.cs">
+            <Link>StaticArchetype.cs</Link>
+        </EmbeddedResource>
+    </ItemGroup>
+
+</Project>

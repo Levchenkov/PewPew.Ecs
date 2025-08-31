@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\PewPew.Ecs.Filters\PewPew.Ecs.Filters.csproj" />
+      <ProjectReference Include="..\PewPew.Ecs.Core\PewPew.Ecs.Core.csproj" />
+      <ProjectReference Include="..\PewPew.Ecs.Hybrid\PewPew.Ecs.Hybrid.csproj" />
+    </ItemGroup>
+
+</Project>

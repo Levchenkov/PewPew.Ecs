@@ -1,0 +1,8 @@
+﻿<#@ template language="C#" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+
+public partial struct
+{
+    public const int Version = 5;
+}
