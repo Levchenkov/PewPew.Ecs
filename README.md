@@ -12,12 +12,6 @@ It supports multiple worlds in one state, indexed filters, hybrid static archety
 - `PewPew.Ecs.Hybrid.SourceGenerators` — generators for custom archetype wrappers
 - `PewPew.Ecs.Demo` — runnable usage examples referenced by the documentation
 
-## Installation
-
-```powershell
-dotnet add package PewPew.Ecs~~~~
-```
-
 ## Quickstart
 
 ```csharp
@@ -43,30 +37,10 @@ world.ExecuteQuery((EntityId entityId, ref Position position, ref Speed speed) =
 
 Detailed documentation based on the runnable snippets in `PewPew.Ecs.Demo/Examples.cs` lives in [`EXAMPLES.md`](EXAMPLES.md).
 
-It covers:
-
-- quickstart with regular components
-- multi-world state with singleton, tag, and static-buffer components
-- system-style updates over collections and tags
-- indexed filters with `BitMask64`, `BitMask128`, or `BitMask256`
-- hybrid worlds with static archetypes
-- SIMD batch queries
-- source-generated archetype wrappers
-- deferred deletes through command buffers
-- optional entity naming support
-- blittable primitive wrappers (`BlittableBool`, `BlittableChar`)
-- inline UTF-8 strings in components (`BlittableString32`)
-- versioned string storage (`StringStorage` / `StringId`)
-- versioned generic object storage (`ObjectStorage<T>` / `ObjectId`)
-- dynamic buffers (`DynamicBuffer<T>`) — variable-length per-entity sequences
-
 ## Important rules
 
-- Initialize every component, tag, singleton, static buffer, and dynamic buffer before using it.
+- Initialize every component, tag, singleton, static buffer and dynamic buffer before using it.
 - Component and tag deletion is swap-and-pop, so entity order is not stable.
-- Indexed filters require at least two unique component types in a filter definition.
-- In hybrid worlds, initialize static archetypes before creating hybrid filters.
-- A `DynamicBuffer<T>` handle is invalidated after `DeleteDynamicBuffer` — do not call methods on it after deletion.
 
 ## Features
 
@@ -83,23 +57,10 @@ It covers:
 - non-indexed queries
 - indexed filters
 - static archetypes
+- SIMD compatible API and internal storage structure
 - command buffers
 - source-generated hybrid archetypes
 - blittable primitive wrappers: `BlittableBool`, `BlittableChar`
 - inline UTF-8 string for components: `BlittableString32`
 - versioned string storage: `StringStorage` / `StringId`
 - versioned generic object storage: `ObjectStorage<T>` / `ObjectId`
-
-## Run locally
-
-Run the demo project:
-
-```powershell
-dotnet run --project .\PewPew.Ecs.Demo\PewPew.Ecs.Demo.csproj
-```
-
-Run the full test suite:
-
-```powershell
-dotnet test .\PewPew.Ecs.Private.sln -v minimal
-```

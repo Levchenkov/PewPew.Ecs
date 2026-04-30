@@ -19,7 +19,7 @@ using PewPew.Ecs.Filters.Masks;
 using PewPew.Ecs.Hybrid;
 ```
 
-Important runtime rule: initialize every component, tag, singleton, static buffer, or dynamic buffer before using it.
+Important runtime rule: initialize every component, tag, singleton, static buffer or dynamic buffer before using it.
 
 ---
 
@@ -104,12 +104,12 @@ public struct KilledBy : IComponent
 When to use this pattern:
 
 - configuration in one world, runtime actors in another
+- check changes and send by network only for selected worlds
 - isolated simulation layers
-- explicit ownership of subsystems by world
 
 ---
 
-## Example 2 — Build systems around collections, tags, and buffers
+## Example 2 — Build systems around collections, tags and buffers
 
 Systems can be plain classes. They do not need a custom framework lifecycle.
 
@@ -251,7 +251,7 @@ public readonly struct MovementQueryWithoutId : IQueryWithoutId<Position, Speed>
 
 This is useful when:
 
-- some entity layouts are known ahead of time
+- the structure of entities is known ahead of time — components are stored contiguously in memory, which reduces cache misses during iteration
 - moving entities between static layouts is part of gameplay state changes
 - you still want filter-based iteration on top of archetypes
 
@@ -300,8 +300,7 @@ public readonly struct MovementBatchQuery : IBatchQuery<Position, Speed>
 
 Use this pattern when:
 
-- your data layout is contiguous enough for vectorization
-- you want a single API for both dense and sparse paths
+- you want to use vectorization for optimizations
 - you are optimizing hot movement or math-heavy systems
 
 ---
@@ -390,8 +389,8 @@ public readonly struct MovementQuery : IQuery<Position, Speed>
 
 Which style to choose:
 
-- lambda: quickest to write
-- struct query: reusable and often easier to inline aggressively
+- lambda: for quic prototypes
+- struct query: allows inline aggressively and most CPU efficient
 
 ---
 
@@ -415,9 +414,7 @@ for (int i = 0; i < positions.Count; i++)
 
 Why this matters:
 
-- direct deletion is swap-and-pop
-- swap-and-pop changes order
-- deferred deletion keeps iteration simple and safe
+- you can't iterate and delete entities or components, so you can use deferred deletion
 
 ---
 
@@ -439,23 +436,7 @@ nameFeature.SetName(secondEntity, "entity #2");
 EntityId getByName = nameFeature.GetEntityId("entity #1");
 ```
 
-This is useful for tooling, debugging, editor integration, and readable logs.
-
----
-
-## Running the examples
-
-Run the demo application:
-
-```powershell
-dotnet run --project .\PewPew.Ecs.Demo\PewPew.Ecs.Demo.csproj
-```
-
-Run the test suite:
-
-```powershell
-dotnet test .\PewPew.Ecs.Private.sln -v minimal
-```
+This is useful for tooling, debugging, editor integration and readable logs.
 
 ---
 
@@ -705,7 +686,7 @@ for (int i = 0; i < collection.BufferCount; i++)
 ```
 
 
-> **Stale handle warning:** a `DynamicBuffer<T>` handle is backed by a `DynamicBufferInstance<T>`. After `DeleteDynamicBuffer` the instance is invalidated. Any further call on the old handle (e.g. `AddLast`) will throw. Always discard handles after deletion.
+> **Stale handle warning:** After `DeleteDynamicBuffer` called the instance of dynamic buffer is invalidated. Any further call on the old handle (e.g. `AddLast`) will throw. Always discard handles after deletion.
 
 ### `StaticBuffer<T>` vs `DynamicBuffer<T>`
 
@@ -714,6 +695,5 @@ for (int i = 0; i < collection.BufferCount; i++)
 | Capacity | fixed max set at `InitStaticBuffer` | grows on demand per entity |
 | Memory layout | all entity slots pre-allocated contiguously | separate heap array per entity |
 | Best for | short, bounded event lists (incoming damage, etc.) | unbounded queues, entity inventories, command lists |
-| `HybridWorld` storage | `CompactStaticBufferSet<T>` | `CompactDynamicBufferSet<T>` |
 
-Dynamic buffers on archetype entities are not allowed — `AddDynamicBuffer` and `DeleteDynamicBuffer` throw for entities that belong to a static archetype.
+Static and dynamic buffers on archetype entities are not allowed — `AddDynamicBuffer` and `DeleteDynamicBuffer` throw for entities that belong to a static archetype.
