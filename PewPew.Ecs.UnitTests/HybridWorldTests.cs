@@ -1,4 +1,4 @@
-﻿using PewPew.Ecs.Core;
+using PewPew.Ecs.Core;
 using PewPew.Ecs.Filters;
 using PewPew.Ecs.Filters.Masks;
 using PewPew.Ecs.Hybrid;
@@ -7,6 +7,96 @@ namespace PewPew.Ecs.UnitTests;
 
 public class HybridWorldTests
 {
+    [Fact]
+    public void DynamicBuffer_AddGetDelete_OnSparseEntity_ShouldBeOk()
+    {
+        var world = WorldFactory.Shared.CreateHybridWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+
+        var entityId = world.CreateEntityId();
+        var buffer = world.AddDynamicBuffer<DynamicDamage>(entityId);
+        buffer.AddLast(new DynamicDamage { Value = 42 });
+
+        world.HasDynamicBuffer<DynamicDamage>(entityId).Should().BeTrue();
+        world.GetDynamicBuffer<DynamicDamage>(entityId).Components[0].Value.Should().Be(42);
+
+        world.DeleteDynamicBuffer<DynamicDamage>(entityId);
+        world.HasDynamicBuffer<DynamicDamage>(entityId).Should().BeFalse();
+    }
+
+    [Fact]
+    public void DynamicBuffer_TryGet_Missing_ShouldReturnFalse()
+    {
+        var world = WorldFactory.Shared.CreateHybridWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+
+        var entityId = world.CreateEntityId();
+
+        world.TryGetDynamicBuffer<DynamicDamage>(entityId, out _).Should().BeFalse();
+    }
+
+    [Fact]
+    public void DynamicBuffer_AddForStaticArchetypeEntity_ExceptionExpected()
+    {
+        var world = WorldFactory.Shared.CreateHybridWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+        world.InitStaticArchetype<Component1, Component2>();
+
+        var archetype = world.GetStaticArchetype<Component1, Component2>();
+        var entityId = world.CreateEntityId();
+        archetype.Add(entityId, new Component1 { Value = 1 }, new Component2 { Value = 2 });
+
+        Action action = () => world.AddDynamicBuffer<DynamicDamage>(entityId);
+        action.Should().Throw<Exception>();
+    }
+
+    [Fact]
+    public void DynamicBuffer_DeleteForStaticArchetypeEntity_ExceptionExpected()
+    {
+        var world = WorldFactory.Shared.CreateHybridWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+        world.InitStaticArchetype<Component1, Component2>();
+
+        var archetype = world.GetStaticArchetype<Component1, Component2>();
+        var entityId = world.CreateEntityId();
+        archetype.Add(entityId, new Component1 { Value = 1 }, new Component2 { Value = 2 });
+
+        Action action = () => world.DeleteDynamicBuffer<DynamicDamage>(entityId);
+        action.Should().Throw<Exception>();
+    }
+
+    [DebugOnlyFact]
+    public void DynamicBuffer_TryGet_EntityFromAnotherWorld_ExceptionExpected()
+    {
+        var world1 = WorldFactory.Shared.CreateHybridWorld();
+        world1.InitDynamicBuffer<DynamicDamage>();
+
+        var world2 = WorldFactory.Shared.CreateHybridWorld();
+        world2.InitDynamicBuffer<DynamicDamage>();
+
+        var entityFromWorld2 = world2.CreateEntityId();
+        world2.AddDynamicBuffer<DynamicDamage>(entityFromWorld2);
+
+        var action = () => world1.TryGetDynamicBuffer<DynamicDamage>(entityFromWorld2, out _);
+
+        action.Should().Throw<Exception>();
+    }
+
+    [DebugOnlyFact]
+    public void DynamicBuffer_TryGet_DeadEntity_ExceptionExpected()
+    {
+        var world = WorldFactory.Shared.CreateHybridWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+
+        var entity = world.CreateEntityId();
+        world.AddDynamicBuffer<DynamicDamage>(entity);
+        world.DeleteEntityId(entity);
+
+        var action = () => world.TryGetDynamicBuffer<DynamicDamage>(entity, out _);
+
+        action.Should().Throw<Exception>();
+    }
+
     [Fact]
     public void StaticArchetype_InitStaticArchetypeMultipleTimes_ShouldBeOk()
     {
@@ -775,4 +865,166 @@ public class HybridWorldTests
     }
 
     // todo: add GetStaticArchetype_PermutateGenericParameters_ShouldGetTheSameArchetype for StaticArchetype<T1, T2, T3>
+
+    // Stale-index tests for DynamicBuffer through HybridWorld (backed by CompactDynamicBufferSet).
+    // After DeleteDynamicBuffer the sparse-page entry is set to StaleDenseIndex (-1).
+    // All HybridWorld DynamicBuffer operations must behave correctly in this state.
+
+    [Fact]
+    public void DynamicBuffer_Stale_HasBuffer_ShouldBeFalse()
+    {
+        var world = WorldFactory.Shared.CreateHybridWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+
+        var entity = world.CreateEntityId();
+        world.AddDynamicBuffer<DynamicDamage>(entity);
+        world.DeleteDynamicBuffer<DynamicDamage>(entity); // sparse slot → stale (-1)
+
+        world.HasDynamicBuffer<DynamicDamage>(entity).Should().BeFalse();
+    }
+
+    [Fact]
+    public void DynamicBuffer_Stale_TryGetBuffer_ShouldReturnFalse()
+    {
+        var world = WorldFactory.Shared.CreateHybridWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+
+        var entity = world.CreateEntityId();
+        world.AddDynamicBuffer<DynamicDamage>(entity).AddLast(new DynamicDamage { Value = 42 });
+        world.DeleteDynamicBuffer<DynamicDamage>(entity); // stale
+
+        world.TryGetDynamicBuffer<DynamicDamage>(entity, out _).Should().BeFalse();
+    }
+
+    [Fact]
+    public void DynamicBuffer_Stale_ReAdd_ShouldReturnFreshBuffer()
+    {
+        var world = WorldFactory.Shared.CreateHybridWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+
+        var entity = world.CreateEntityId();
+        world.AddDynamicBuffer<DynamicDamage>(entity).AddLast(new DynamicDamage { Value = 99 });
+        world.DeleteDynamicBuffer<DynamicDamage>(entity); // stale
+
+        var buffer = world.AddDynamicBuffer<DynamicDamage>(entity); // re-add through stale slot
+
+        buffer.Count.Should().Be(0);
+        world.HasDynamicBuffer<DynamicDamage>(entity).Should().BeTrue();
+    }
+
+    [Fact]
+    public void DynamicBuffer_Stale_ReAddAndWrite_ShouldBeReadBack()
+    {
+        var world = WorldFactory.Shared.CreateHybridWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+
+        var entity = world.CreateEntityId();
+        world.AddDynamicBuffer<DynamicDamage>(entity).AddLast(new DynamicDamage { Value = 99 });
+        world.DeleteDynamicBuffer<DynamicDamage>(entity); // stale
+
+        world.AddDynamicBuffer<DynamicDamage>(entity).AddLast(new DynamicDamage { Value = 7 });
+
+        world.HasDynamicBuffer<DynamicDamage>(entity).Should().BeTrue();
+        world.GetDynamicBuffer<DynamicDamage>(entity).Count.Should().Be(1);
+        world.GetDynamicBuffer<DynamicDamage>(entity).Components[0].Value.Should().Be(7);
+    }
+
+    [Fact]
+    public void DynamicBuffer_Stale_DeleteAgain_ShouldBeNoOp()
+    {
+        var world = WorldFactory.Shared.CreateHybridWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+
+        var entity = world.CreateEntityId();
+        world.AddDynamicBuffer<DynamicDamage>(entity);
+        world.DeleteDynamicBuffer<DynamicDamage>(entity); // stale
+
+        var action = () => world.DeleteDynamicBuffer<DynamicDamage>(entity);
+
+        action.Should().NotThrow();
+        world.HasDynamicBuffer<DynamicDamage>(entity).Should().BeFalse();
+    }
+
+    [Fact]
+    public void DynamicBuffer_Stale_OtherEntityUnaffected()
+    {
+        var world = WorldFactory.Shared.CreateHybridWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+
+        var entity1 = world.CreateEntityId();
+        var entity2 = world.CreateEntityId();
+
+        world.AddDynamicBuffer<DynamicDamage>(entity1).AddLast(new DynamicDamage { Value = 1 });
+        world.AddDynamicBuffer<DynamicDamage>(entity2).AddLast(new DynamicDamage { Value = 2 });
+
+        world.DeleteDynamicBuffer<DynamicDamage>(entity1); // entity1 stale, entity2 valid
+
+        world.HasDynamicBuffer<DynamicDamage>(entity1).Should().BeFalse();
+        world.HasDynamicBuffer<DynamicDamage>(entity2).Should().BeTrue();
+        world.GetDynamicBuffer<DynamicDamage>(entity2).Components[0].Value.Should().Be(2);
+    }
+
+    [Fact]
+    public void DynamicBuffer_Stale_ReAddAfterSwapAndPop_ShouldWork()
+    {
+        // Deleting entity1 causes entity2 to swap into entity1's dense slot.
+        // entity1's sparse entry → stale. Re-adding entity1 must allocate a new slot.
+        var world = WorldFactory.Shared.CreateHybridWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+
+        var entity1 = world.CreateEntityId();
+        var entity2 = world.CreateEntityId();
+
+        world.AddDynamicBuffer<DynamicDamage>(entity1).AddLast(new DynamicDamage { Value = 1 });
+        world.AddDynamicBuffer<DynamicDamage>(entity2).AddLast(new DynamicDamage { Value = 2 });
+
+        world.DeleteDynamicBuffer<DynamicDamage>(entity1); // swap-and-pop: entity2 moves to slot 1
+
+        world.GetDynamicBuffer<DynamicDamage>(entity2).Components[0].Value.Should().Be(2);
+
+        world.AddDynamicBuffer<DynamicDamage>(entity1).AddLast(new DynamicDamage { Value = 10 });
+
+        world.HasDynamicBuffer<DynamicDamage>(entity1).Should().BeTrue();
+        world.GetDynamicBuffer<DynamicDamage>(entity1).Components[0].Value.Should().Be(10);
+        world.GetDynamicBuffer<DynamicDamage>(entity2).Components[0].Value.Should().Be(2);
+    }
+
+    [Fact]
+    public void DynamicBuffer_Stale_DeleteEntityId_ShouldCleanUp()
+    {
+        // After DeleteEntityId, the buffer (if any) is removed. Even if the slot was stale beforehand,
+        // the entity should be fully cleaned up.
+        var world = WorldFactory.Shared.CreateHybridWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+
+        var entity1 = world.CreateEntityId();
+        var entity2 = world.CreateEntityId();
+
+        world.AddDynamicBuffer<DynamicDamage>(entity1).AddLast(new DynamicDamage { Value = 1 });
+        world.AddDynamicBuffer<DynamicDamage>(entity2).AddLast(new DynamicDamage { Value = 2 });
+
+        world.DeleteDynamicBuffer<DynamicDamage>(entity1); // entity1 stale
+        world.DeleteEntityId(entity1); // full entity deletion while slot is stale
+
+        var newEntity = world.CreateEntityId();
+        world.HasDynamicBuffer<DynamicDamage>(entity2).Should().BeTrue();
+        world.GetDynamicBuffer<DynamicDamage>(entity2).Components[0].Value.Should().Be(2);
+    }
+
+    [Fact]
+    public void DynamicBuffer_Handle_AfterDelete_AddLast_ShouldThrow()
+    {
+        var world = WorldFactory.Shared.CreateHybridWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+
+        var entity = world.CreateEntityId();
+        var handle = world.AddDynamicBuffer<DynamicDamage>(entity);
+        world.DeleteDynamicBuffer<DynamicDamage>(entity); // invalidates the underlying DynamicBufferInstance
+
+        var threw = false;
+        try { handle.AddLast(new DynamicDamage { Value = 1 }); }
+        catch { threw = true; }
+
+        threw.Should().BeTrue();
+    }
 }

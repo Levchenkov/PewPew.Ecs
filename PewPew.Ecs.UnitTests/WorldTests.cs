@@ -102,6 +102,20 @@ public class WorldTests
     }
 
     [Fact]
+    public void InitSparseSetFor_InitDynamicBufferTwice_ExceptionExpected()
+    {
+        var world = WorldFactory.Shared.CreateWorld();
+
+        world.InitDynamicBuffer<DynamicDamage>();
+        world.IsComponentInitialized<DynamicDamage>().Should().BeTrue();
+        world.GetDynamicBuffers<DynamicDamage>();
+
+        var action = () => world.InitDynamicBuffer<DynamicDamage>();
+
+        action.Should().Throw<Exception>();
+    }
+
+    [Fact]
     public void InitNameFeature_InitTwice_ExceptionExpected()
     {
         var world = WorldFactory.Shared.CreateWorld();
@@ -164,6 +178,20 @@ public class WorldTests
         var action = () =>
         {
             world.GetStaticBuffers<Damage>();
+        };
+
+        action.Should().Throw<Exception>();
+    }
+
+    [DebugOnlyFact]
+    public void GetDynamicBuffers_ComponentIsNotInitedBefore_ExceptionExpected()
+    {
+        var world = WorldFactory.Shared.CreateWorld();
+        world.IsComponentInitialized<DynamicDamage>().Should().BeFalse();
+
+        var action = () =>
+        {
+            world.GetDynamicBuffers<DynamicDamage>();
         };
 
         action.Should().Throw<Exception>();
@@ -498,6 +526,126 @@ public class WorldTests
         action.Should().Throw<Exception>();
     }
 
+    [DebugOnlyFact]
+    public void DynamicBufferValidateEntityId_WrongWorld_ExceptionExpected()
+    {
+        var world1 = WorldFactory.Shared.CreateWorld();
+        world1.InitDynamicBuffer<DynamicDamage>();
+
+        var entityId1 = world1.CreateEntityId();
+        world1.AddDynamicBuffer<DynamicDamage>(entityId1);
+
+        var world2 = WorldFactory.Shared.CreateWorld();
+        world2.InitDynamicBuffer<DynamicDamage>();
+
+        var entityId2 = world2.CreateEntityId();
+        world2.AddDynamicBuffer<DynamicDamage>(entityId2);
+
+        world1.HasDynamicBuffer<DynamicDamage>(entityId1).Should().BeTrue();
+        world2.HasDynamicBuffer<DynamicDamage>(entityId2).Should().BeTrue();
+
+        Action action = () => world1.HasDynamicBuffer<DynamicDamage>(entityId2);
+        action.Should().Throw<Exception>();
+
+        action = () => world2.HasDynamicBuffer<DynamicDamage>(entityId1);
+        action.Should().Throw<Exception>();
+
+        action = () =>
+        {
+            world1.AddDynamicBuffer<DynamicDamage>(entityId2);
+        };
+        action.Should().Throw<Exception>();
+
+        action = () =>
+        {
+            world1.GetDynamicBuffer<DynamicDamage>(entityId2);
+        };
+        action.Should().Throw<Exception>();
+
+        action = () =>
+        {
+            world1.DeleteDynamicBuffer<DynamicDamage>(entityId2);
+        };
+        action.Should().Throw<Exception>();
+
+        action = () =>
+        {
+            world1.TryGetDynamicBuffer<DynamicDamage>(entityId2, out _);
+        };
+        action.Should().Throw<Exception>();
+    }
+
+    [DebugOnlyFact]
+    public void DynamicBufferValidateEntityId_DeadEntityId_ExceptionExpected()
+    {
+        var world = WorldFactory.Shared.CreateWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+
+        var entityId = world.CreateEntityId();
+        world.AddDynamicBuffer<DynamicDamage>(entityId);
+
+        world.DeleteEntityId(entityId);
+
+        Action action = () => world.HasDynamicBuffer<DynamicDamage>(entityId);
+        action.Should().Throw<Exception>();
+
+        action = () =>
+        {
+            world.AddDynamicBuffer<DynamicDamage>(entityId);
+        };
+        action.Should().Throw<Exception>();
+
+        action = () =>
+        {
+            world.GetDynamicBuffer<DynamicDamage>(entityId);
+        };
+        action.Should().Throw<Exception>();
+
+        action = () =>
+        {
+            world.DeleteDynamicBuffer<DynamicDamage>(entityId);
+        };
+        action.Should().Throw<Exception>();
+
+        action = () =>
+        {
+            world.TryGetDynamicBuffer<DynamicDamage>(entityId, out _);
+        };
+        action.Should().Throw<Exception>();
+    }
+
+    [Fact]
+    public void DynamicBuffer_TryGet_WhenMissingAndWhenAdded_ShouldReturnExpected()
+    {
+        var world = WorldFactory.Shared.CreateWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+
+        var entity = world.CreateEntityId();
+
+        world.TryGetDynamicBuffer<DynamicDamage>(entity, out _).Should().BeFalse();
+
+        world.AddDynamicBuffer<DynamicDamage>(entity).AddLast(new DynamicDamage { Value = 77 });
+
+        world.TryGetDynamicBuffer<DynamicDamage>(entity, out var existing).Should().BeTrue();
+        existing.Count.Should().Be(1);
+        existing.Components[0].Value.Should().Be(77);
+    }
+
+    [Fact]
+    public void DynamicBuffer_ReAddAfterDelete_ShouldBeEmpty()
+    {
+        var world = WorldFactory.Shared.CreateWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+
+        var entity = world.CreateEntityId();
+        world.AddDynamicBuffer<DynamicDamage>(entity).AddLast(new DynamicDamage { Value = 123 });
+
+        world.DeleteDynamicBuffer<DynamicDamage>(entity);
+
+        var readded = world.AddDynamicBuffer<DynamicDamage>(entity);
+        readded.Count.Should().Be(0);
+    }
+
     [Fact]
     public void DeleteEntityId_EntityHasComponents_ShouldDeleteAllComponents()
     {
@@ -506,12 +654,14 @@ public class WorldTests
         world.InitTag<EmptyComponent>();
         world.InitSingleton<SingletonComponent>();
         world.InitStaticBuffer<Damage>();
+        world.InitDynamicBuffer<DynamicDamage>();
 
         var entityId = world.CreateEntityId();
 
         world.AddComponent<HealthComponent>(entityId);
         world.AddTag<EmptyComponent>(entityId);
         world.AddStaticBuffer<Damage>(entityId);
+        world.AddDynamicBuffer<DynamicDamage>(entityId).AddLast(new DynamicDamage { Value = 42 });
         world.AddSingleton<SingletonComponent>();
 
         world.DeleteEntityId(entityId);
@@ -519,6 +669,62 @@ public class WorldTests
         world.GetComponents<HealthComponent>().Count.Should().Be(0);
         world.GetTags<EmptyComponent>().Count.Should().Be(0);
         world.GetStaticBuffers<Damage>().BufferCount.Should().Be(0);
+        world.GetDynamicBuffers<DynamicDamage>().BufferCount.Should().Be(0);
         world.HasSingleton<SingletonComponent>().Should().BeTrue();
     }
+
+    [Fact]
+    public void InitComponent_NonBlittableStruct_WithBoolField_ExceptionExpected()
+    {
+        var world = WorldFactory.Shared.CreateWorld();
+        var action = () => world.InitComponent<NonBlittableWithBool>();
+        action.Should().Throw<NotSupportedException>();
+    }
+
+    [Fact]
+    public void InitTag_NonBlittableStruct_WithBoolField_ExceptionExpected()
+    {
+        var world = WorldFactory.Shared.CreateWorld();
+        var action = () => world.InitTag<NonBlittableTagWithBool>();
+        action.Should().Throw<NotSupportedException>();
+    }
+
+    [Fact]
+    public void InitSingleton_NonBlittableStruct_WithBoolField_ExceptionExpected()
+    {
+        var world = WorldFactory.Shared.CreateWorld();
+        var action = () => world.InitSingleton<NonBlittableSingletonWithBool>();
+        action.Should().Throw<NotSupportedException>();
+    }
+
+    [Fact]
+    public void InitStaticBuffer_NonBlittableStruct_WithBoolField_ExceptionExpected()
+    {
+        var world = WorldFactory.Shared.CreateWorld();
+        var action = () => world.InitStaticBuffer<NonBlittableStaticBufferWithBool>();
+        action.Should().Throw<NotSupportedException>();
+    }
+
+    [Fact]
+    public void InitDynamicBuffer_NonBlittableStruct_WithBoolField_ExceptionExpected()
+    {
+        var world = WorldFactory.Shared.CreateWorld();
+        var action = () => world.InitDynamicBuffer<NonBlittableDynamicBufferWithBool>();
+        action.Should().Throw<NotSupportedException>();
+    }
+
+    [Fact]
+    public void InitComponent_NonBlittableStruct_WithManagedReference_ExceptionExpected()
+    {
+        var world = WorldFactory.Shared.CreateWorld();
+        var action = () => world.InitComponent<NonBlittableWithString>();
+        action.Should().Throw<NotSupportedException>();
+    }
+
+    private struct NonBlittableWithBool : IComponent { public bool Flag; public int Value; }
+    private struct NonBlittableTagWithBool : ITagComponent { public bool Flag; }
+    private struct NonBlittableSingletonWithBool : ISingletonComponent { public bool Flag; }
+    private struct NonBlittableStaticBufferWithBool : IStaticBufferComponent { public bool Flag; }
+    private struct NonBlittableDynamicBufferWithBool : IDynamicBufferComponent { public bool Flag; }
+    private struct NonBlittableWithString : IComponent { public string Name; }
 }

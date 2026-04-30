@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PewPew.Ecs.Core", "PewPew.Ecs.Core\PewPew.Ecs.Core.csproj", "{A6A1AAFC-3BA7-4F11-9168-AF88E031897B}"
 EndProject
@@ -11,6 +11,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PewPew.Ecs.Hybrid", "PewPew.Ecs.Hybrid\PewPew.Ecs.Hybrid.csproj", "{FCCCA478-C6BA-4FD5-8206-9E9F302AD4FE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PewPew.Ecs.SourceGenerators", "PewPew.Ecs.SourceGenerators\PewPew.Ecs.SourceGenerators.csproj", "{7380416E-1B3E-4260-A0AB-F6D8A05880B5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PewPew.Ecs.Hybrid.SourceGenerators", "PewPew.Ecs.Hybrid.SourceGenerators\PewPew.Ecs.Hybrid.SourceGenerators.csproj", "{0FBA48E5-5311-4949-B63C-D5572ED43049}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PewPew.Ecs.Hybrid.SourceGenerators.UnitTests", "PewPew.Ecs.Hybrid.SourceGenerators.UnitTests\PewPew.Ecs.Hybrid.SourceGenerators.UnitTests.csproj", "{3C23B17B-F2BB-4D34-ABEF-999474D71E87}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -66,5 +70,13 @@ Global
 		{1F81976B-4A4D-4A48-B3D8-6E6BDDE11299}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1F81976B-4A4D-4A48-B3D8-6E6BDDE11299}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1F81976B-4A4D-4A48-B3D8-6E6BDDE11299}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FBA48E5-5311-4949-B63C-D5572ED43049}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FBA48E5-5311-4949-B63C-D5572ED43049}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FBA48E5-5311-4949-B63C-D5572ED43049}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FBA48E5-5311-4949-B63C-D5572ED43049}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C23B17B-F2BB-4D34-ABEF-999474D71E87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C23B17B-F2BB-4D34-ABEF-999474D71E87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C23B17B-F2BB-4D34-ABEF-999474D71E87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C23B17B-F2BB-4D34-ABEF-999474D71E87}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

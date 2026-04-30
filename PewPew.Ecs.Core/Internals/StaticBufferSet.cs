@@ -10,9 +10,9 @@ internal class StaticBufferSet<T> : IComponentCollection
 
     private readonly int _maxElementsCount;
     private readonly int[] _indexes;
+    private readonly int[] _elementsCounts;
     private T[] _components;
     private EntityId[] _entities;
-    private int[] _elementsCounts;
     private readonly IResizeStrategy _resizeStrategy;
     private readonly IEntityManager _entityManager;
 
@@ -28,8 +28,8 @@ internal class StaticBufferSet<T> : IComponentCollection
         _resizeStrategy = resizeStrategy;
         _entityManager = entityManager;
         _indexes = new int[maxEntitiesCount];
+        _elementsCounts = new int[maxEntitiesCount];
         _entities = new EntityId[maxComponentsCount];
-        _elementsCounts = new int[maxComponentsCount];
         _components = new T[maxComponentsCount * _maxElementsCount];
 
         Reset();
@@ -61,18 +61,18 @@ internal class StaticBufferSet<T> : IComponentCollection
     {
         DebugValidateEntityId(entityId);
 
-        var index = _indexes[entityId.Index];
+        ref var index = ref _indexes[entityId.Index];
         if(index == InvalidIndex)
             ThrowHelper.ThrowComponentNotFoundException<T>(entityId);
 
-        return GetBufferByIndex(index);
+        return GetBufferByIndex(ref index, entityId);
     }
 
     public bool TryGetBuffer(EntityId entityId, out StaticBuffer<T> staticBuffer)
     {
         DebugValidateEntityId(entityId);
 
-        var index = _indexes[entityId.Index];
+        ref var index = ref _indexes[entityId.Index];
 
         if (index == InvalidIndex)
         {
@@ -81,17 +81,16 @@ internal class StaticBufferSet<T> : IComponentCollection
             return false;
         }
 
-        staticBuffer = GetBufferByIndex(index);
+        staticBuffer = GetBufferByIndex(ref index, entityId);
 
         return true;
     }
 
-    private StaticBuffer<T> GetBufferByIndex(int index)
+    private StaticBuffer<T> GetBufferByIndex(ref int index, EntityId entityId)
     {
-        var start = index * _maxElementsCount;
-        ref var count = ref _elementsCounts[index];
+        ref var count = ref _elementsCounts[entityId.Index];
 
-        return new StaticBuffer<T>(_components, start, ref count, _maxElementsCount);
+        return new StaticBuffer<T>(_components, ref index, ref count, _maxElementsCount);
     }
 
     public StaticBuffer<T> AddBuffer(EntityId entityId)
@@ -100,16 +99,16 @@ internal class StaticBufferSet<T> : IComponentCollection
 
         ref var index = ref _indexes[entityId.Index];
         if (index != InvalidIndex)
-            return GetBufferByIndex(index);
+            return GetBufferByIndex(ref index, entityId);
 
         if (_bufferCount == _entities.Length)
             Resize();
 
         index = _bufferCount++;
         _entities[index] = entityId;
-        _elementsCounts[index] = 0;
+        _elementsCounts[entityId.Index] = 0;
 
-        return GetBufferByIndex(index);
+        return GetBufferByIndex(ref index, entityId);
     }
 
     public void DeleteBuffer(EntityId entityId)
@@ -138,12 +137,12 @@ internal class StaticBufferSet<T> : IComponentCollection
         }
 
         var deletingBuffer = new Span<T>(_components, index * _maxElementsCount, _maxElementsCount);
-        var lastBuffer = new Span<T>(_components, _bufferCount * _maxElementsCount, _elementsCounts[_bufferCount]);
+        var lastBuffer = new Span<T>(_components, _bufferCount * _maxElementsCount, _elementsCounts[_entities[_bufferCount].Index]);
         lastBuffer.CopyTo(deletingBuffer);
 
-        _elementsCounts[index] = _elementsCounts[_bufferCount];
         var replacedEntityId = _entities[index] = _entities[_bufferCount];
         _indexes[replacedEntityId.Index] = index;
+
         index = InvalidIndex;
     }
 
@@ -163,8 +162,7 @@ internal class StaticBufferSet<T> : IComponentCollection
             return;
 
         Array.Resize(ref _components, capacity * _maxElementsCount);
-        Array.Resize(ref _entities, capacity);
-        Array.Resize(ref _elementsCounts, capacity);
+        Array.Resize(ref _entities, capacity);;
     }
 
     [Conditional("DEBUG")]

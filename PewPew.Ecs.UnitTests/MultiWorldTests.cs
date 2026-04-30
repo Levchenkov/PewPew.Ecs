@@ -65,6 +65,20 @@ public class MultiWorldTests
     }
 
     [Fact]
+    public void InitDynamicBuffer_TheSameComponent_ShouldBeOk()
+    {
+        var world1 = WorldFactory.Shared.CreateWorld();
+        world1.InitDynamicBuffer<DynamicDamage>();
+
+        var world2 = WorldFactory.Shared.CreateWorld();
+        world2.InitDynamicBuffer<DynamicDamage>();
+
+        world1.IsComponentInitialized<DynamicDamage>().Should().BeTrue();
+
+        world2.IsComponentInitialized<DynamicDamage>().Should().BeTrue();
+    }
+
+    [Fact]
     public void InitComponent_MoreThenConfigured_ExceptionExpected()
     {
         var world1 = WorldFactory.Shared.CreateWorld(settings => settings.MaxAllowedUniqueComponentsCount = 2);
@@ -121,10 +135,17 @@ public class MultiWorldTests
         };
         addSingleton.Should().NotThrow<Exception>();
 
+        var addDynamicBuffer = () =>
+        {
+            world1.InitDynamicBuffer<DynamicDamage>();
+        };
+        addDynamicBuffer.Should().NotThrow<Exception>();
+
         world1.IsComponentInitialized<Component1>().Should().BeTrue();
         world1.IsComponentInitialized<Component2>().Should().BeTrue();
         world1.IsComponentInitialized<EmptyComponent>().Should().BeFalse();
         world1.IsComponentInitialized<Damage>().Should().BeTrue();
         world1.IsComponentInitialized<SingletonComponent>().Should().BeTrue();
+        world1.IsComponentInitialized<DynamicDamage>().Should().BeTrue();
     }
 }

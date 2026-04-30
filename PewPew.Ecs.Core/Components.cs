@@ -15,3 +15,7 @@ public interface ISingletonComponent
 public interface IStaticBufferComponent
 {
 }
+
+public interface IDynamicBufferComponent
+{
+}

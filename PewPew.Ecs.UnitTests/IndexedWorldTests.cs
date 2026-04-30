@@ -103,6 +103,20 @@ public class IndexedWorldTests
     }
 
     [Fact]
+    public void InitSparseSetFor_InitDynamicBufferTwice_ExceptionExpected()
+    {
+        var world = WorldFactory.Shared.CreateIndexedWorld();
+
+        world.InitDynamicBuffer<DynamicDamage>();
+        world.IsComponentInitialized<DynamicDamage>().Should().BeTrue();
+        world.GetDynamicBuffers<DynamicDamage>();
+
+        var action = () => world.InitDynamicBuffer<DynamicDamage>();
+
+        action.Should().Throw<Exception>();
+    }
+
+    [Fact]
     public void InitNameFeature_InitTwice_ExceptionExpected()
     {
         var world = WorldFactory.Shared.CreateIndexedWorld();
@@ -166,6 +180,32 @@ public class IndexedWorldTests
         {
             world.GetStaticBuffers<Damage>();
         };
+
+        action.Should().Throw<Exception>();
+    }
+
+    [DebugOnlyFact]
+    public void GetDynamicBuffers_ComponentIsNotInitedBefore_ExceptionExpected()
+    {
+        var world = WorldFactory.Shared.CreateIndexedWorld();
+        world.IsComponentInitialized<DynamicDamage>().Should().BeFalse();
+
+        var action = () =>
+        {
+            world.GetDynamicBuffers<DynamicDamage>();
+        };
+
+        action.Should().Throw<Exception>();
+    }
+
+    [DebugOnlyFact]
+    public void TryGetDynamicBuffer_ComponentIsNotInitedBefore_ExceptionExpected()
+    {
+        var world = WorldFactory.Shared.CreateIndexedWorld();
+
+        var entityId = world.CreateEntityId();
+
+        var action = () => world.TryGetDynamicBuffer<DynamicDamage>(entityId, out _);
 
         action.Should().Throw<Exception>();
     }
@@ -267,6 +307,56 @@ public class IndexedWorldTests
         };
 
         action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void DynamicBuffer_TryGetAddDelete_ShouldWork()
+    {
+        var world = WorldFactory.Shared.CreateIndexedWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+
+        var entityId = world.CreateEntityId();
+
+        world.TryGetDynamicBuffer<DynamicDamage>(entityId, out _).Should().BeFalse();
+
+        world.AddDynamicBuffer<DynamicDamage>(entityId).AddLast(new DynamicDamage { Value = 55 });
+        world.TryGetDynamicBuffer<DynamicDamage>(entityId, out var existing).Should().BeTrue();
+        existing.Components[0].Value.Should().Be(55);
+
+        world.DeleteDynamicBuffer<DynamicDamage>(entityId);
+        world.TryGetDynamicBuffer<DynamicDamage>(entityId, out _).Should().BeFalse();
+    }
+
+    [DebugOnlyFact]
+    public void DynamicBuffer_TryGet_EntityFromAnotherWorld_ExceptionExpected()
+    {
+        var world1 = WorldFactory.Shared.CreateIndexedWorld();
+        world1.InitDynamicBuffer<DynamicDamage>();
+
+        var world2 = WorldFactory.Shared.CreateIndexedWorld();
+        world2.InitDynamicBuffer<DynamicDamage>();
+
+        var entityFromWorld2 = world2.CreateEntityId();
+        world2.AddDynamicBuffer<DynamicDamage>(entityFromWorld2);
+
+        var action = () => world1.TryGetDynamicBuffer<DynamicDamage>(entityFromWorld2, out _);
+
+        action.Should().Throw<Exception>();
+    }
+
+    [DebugOnlyFact]
+    public void DynamicBuffer_TryGet_DeadEntity_ExceptionExpected()
+    {
+        var world = WorldFactory.Shared.CreateIndexedWorld();
+        world.InitDynamicBuffer<DynamicDamage>();
+
+        var entity = world.CreateEntityId();
+        world.AddDynamicBuffer<DynamicDamage>(entity);
+        world.DeleteEntityId(entity);
+
+        var action = () => world.TryGetDynamicBuffer<DynamicDamage>(entity, out _);
+
+        action.Should().Throw<Exception>();
     }
 
     [DebugOnlyFact]

@@ -15,6 +15,7 @@ public class ComponentMetadataInitializerTests
         ComponentMetadata<DontUseThisTag>.GlobalIndex.Should().NotBe(ComponentMetadata.InvalidIndex);
         ComponentMetadata<DontUseThisSingleton>.GlobalIndex.Should().NotBe(ComponentMetadata.InvalidIndex);
         ComponentMetadata<DontUseThisStaticBuffer>.GlobalIndex.Should().NotBe(ComponentMetadata.InvalidIndex);
+        ComponentMetadata<DontUseThisDynamicBuffer>.GlobalIndex.Should().NotBe(ComponentMetadata.InvalidIndex);
     }
 
     private struct DontUseThisComponent : IComponent
@@ -30,6 +31,10 @@ public class ComponentMetadataInitializerTests
     }
 
     private struct DontUseThisStaticBuffer : IStaticBufferComponent
+    {
+    }
+
+    private struct DontUseThisDynamicBuffer : IDynamicBufferComponent
     {
     }
 }

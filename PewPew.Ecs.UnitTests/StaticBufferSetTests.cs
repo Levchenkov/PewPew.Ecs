@@ -4,6 +4,15 @@ using PewPew.Ecs.Core.Internals;
 
 namespace PewPew.Ecs.UnitTests;
 
+file class DeadEntityManager : IEntityManager
+{
+    public int EntityCapacity => throw new NotSupportedException();
+    public Span<EntityId> Entities => throw new NotSupportedException();
+    public EntityId CreateEntityId() => throw new NotSupportedException();
+    public void DeleteEntityId(EntityId entityId) { }
+    public bool IsAlive(EntityId entityId) => false;
+}
+
 public class StaticBufferSetTests
 {
     private readonly DoubleSizeStrategy _resizeStrategy = new(10);
@@ -294,5 +303,60 @@ public class StaticBufferSetTests
 
         var bufferRef = staticBufferSet.AddBuffer(first);
         bufferRef.Count.Should().Be(0);
+    }
+
+    [DebugOnlyFact]
+    public void HasBuffer_DeadEntity_ShouldThrow()
+    {
+        var deadEntityManager = new DeadEntityManager();
+        var staticBufferSet = new StaticBufferSet<Damage>(10, 2, 10, _resizeStrategy, deadEntityManager);
+
+        Action action = () => staticBufferSet.HasBuffer(new EntityId(1, 1, 0));
+
+        action.Should().ThrowExactly<NotSupportedException>();
+    }
+
+    [DebugOnlyFact]
+    public void GetBuffer_DeadEntity_ShouldThrow()
+    {
+        var deadEntityManager = new DeadEntityManager();
+        var staticBufferSet = new StaticBufferSet<Damage>(10, 2, 10, _resizeStrategy, deadEntityManager);
+
+        Action action = () => staticBufferSet.GetBuffer(new EntityId(1, 1, 0));
+
+        action.Should().ThrowExactly<NotSupportedException>();
+    }
+
+    [DebugOnlyFact]
+    public void TryGetBuffer_DeadEntity_ShouldThrow()
+    {
+        var deadEntityManager = new DeadEntityManager();
+        var staticBufferSet = new StaticBufferSet<Damage>(10, 2, 10, _resizeStrategy, deadEntityManager);
+
+        Action action = () => staticBufferSet.TryGetBuffer(new EntityId(1, 1, 0), out _);
+
+        action.Should().ThrowExactly<NotSupportedException>();
+    }
+
+    [DebugOnlyFact]
+    public void AddBuffer_DeadEntity_ShouldThrow()
+    {
+        var deadEntityManager = new DeadEntityManager();
+        var staticBufferSet = new StaticBufferSet<Damage>(10, 2, 10, _resizeStrategy, deadEntityManager);
+
+        Action action = () => staticBufferSet.AddBuffer(new EntityId(1, 1, 0));
+
+        action.Should().ThrowExactly<NotSupportedException>();
+    }
+
+    [DebugOnlyFact]
+    public void DeleteBuffer_DeadEntity_ShouldThrow()
+    {
+        var deadEntityManager = new DeadEntityManager();
+        var staticBufferSet = new StaticBufferSet<Damage>(10, 2, 10, _resizeStrategy, deadEntityManager);
+
+        Action action = () => staticBufferSet.DeleteBuffer(new EntityId(1, 1, 0));
+
+        action.Should().ThrowExactly<NotSupportedException>();
     }
 }

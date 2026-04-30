@@ -7,7 +7,8 @@ public interface IIndexedComponentsProvider<TMask> :
     IIndexedComponentCollectionProvider<TMask>,
     IIndexedTagCollectionProvider<TMask>,
     ISingletonProvider,
-    IStaticBufferCollectionProvider
+    IStaticBufferCollectionProvider,
+    IDynamicBufferCollectionProvider
     where TMask : struct, IBitMask<TMask>
 {
 }

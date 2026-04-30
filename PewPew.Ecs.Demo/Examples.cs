@@ -442,69 +442,18 @@ public static class Examples
     }
 }
 
-public readonly ref struct PlayerArchetype
-{
-    private readonly StaticArchetype<BitMask64, Position, Speed> _archetype;
-
-    public PlayerArchetype(StaticArchetype<BitMask64, Position, Speed> archetype)
-    {
-        _archetype = archetype;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Player Get(EntityId entityId)
-    {
-        var index = _archetype.GetRequiredIndexUnsafe(entityId);
-
-        return new Player(
-            ref _archetype.GetComponent1Unsafe(index),
-            ref _archetype.GetComponent2Unsafe(index));
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ref Position GetPosition(EntityId entityId) => ref _archetype.GetComponent1(entityId);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ref Speed GetSpeed(EntityId entityId) => ref _archetype.GetComponent2(entityId);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Add(EntityId entityId, Player player)
-    {
-        _archetype.Add(entityId, player.Position, player.Speed);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Player Add(EntityId entityId)
-    {
-        var player = _archetype.Add(entityId);
-
-        return new Player(ref player.Component1, ref player.Component2);
-    }
-}
-
+// [Archetype] triggers source generation of PlayerArchetype ref struct wrapper
+// and PlayerHybridWorldExtensions (InitPlayerArchetype / GetPlayerArchetype).
+// Only this ref struct definition needs to be written manually.
+[PewPew.Ecs.Hybrid.Archetype]
 public ref struct Player
 {
+    public ref Position Position;
+    public ref Speed Speed;
+
     public Player(ref Position position, ref Speed speed)
     {
         Position = ref position;
         Speed = ref speed;
-    }
-
-    public ref Position Position;
-    public ref Speed Speed;
-}
-
-public static class ExampleHybridWorldExtensions
-{
-    public static void InitPlayerArchetype(this HybridWorld world)
-    {
-        world.InitStaticArchetype<Position, Speed>();
-    }
-
-    public static PlayerArchetype GetPlayerArchetype(this HybridWorld world)
-    {
-        var archetypeRef = world.GetStaticArchetype<Position, Speed>();
-
-        return new PlayerArchetype(archetypeRef);
     }
 }

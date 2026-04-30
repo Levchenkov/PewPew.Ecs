@@ -12,6 +12,9 @@ internal static class ComponentMetadata<T>
         if (GlobalIndex != ComponentMetadata.InvalidIndex)
             return;
 
+        if (!BlittableHelper.IsBlittable(typeof(T)))
+            ThrowHelper.ThrowNonBlittableComponentException<T>();
+
         GlobalIndex = ComponentMetadata.TotalCount++;
 
 #if DEBUG

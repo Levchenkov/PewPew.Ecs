@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using PewPew.Ecs.Core.Internals;
 
@@ -6,16 +7,19 @@ namespace PewPew.Ecs.Core;
 public ref struct StaticBuffer<T>
     where T : struct
 {
+    private const int InvalidIndex = -1;
+
     private readonly T[] _components;
-    private readonly int _start;
 
 #if NETSTANDARD2_1
+    private Ref<int> _index;
     private Ref<int> _count;
 #else
+    private ref int _index;
     private ref int _count;
 #endif
 
-    public Span<T> Components => new(_components, _start, Count);
+    public Span<T> Components => new(_components, Start, Count);
 
     public int Count
     {
@@ -29,7 +33,7 @@ public ref struct StaticBuffer<T>
 #endif
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set
+        private set
         {
 #if NETSTANDARD2_1
             _count.Value = value;
@@ -53,15 +57,31 @@ public ref struct StaticBuffer<T>
         get => Count == Capacity;
     }
 
-    public StaticBuffer(T[] components, int start, ref int count, int maxCount)
+    private int Start
     {
-        _components = components;
-        _start = start;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get
+        {
+            DebugValidateBufferIsAlive();
 
 #if NETSTANDARD2_1
+            return _index.Value * Capacity;
+#else
+            return _index * Capacity;
+#endif
+        }
+    }
+
+    public StaticBuffer(T[] components, ref int index, ref int count, int maxCount)
+    {
+        _components = components;
+
+#if NETSTANDARD2_1
+        _index = new Ref<int>(ref index);
         _count = new Ref<int>(ref count);
 #else
-         _count = ref count;
+        _index = ref index;
+        _count = ref count;
 #endif
 
         Capacity = maxCount;
@@ -75,7 +95,7 @@ public ref struct StaticBuffer<T>
             ThrowHelper.ThrowMaxCapacityException<T>();
 #endif
 
-        _components[_start + Count++] = component;
+        _components[Start + Count++] = component;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -86,9 +106,9 @@ public ref struct StaticBuffer<T>
             ThrowHelper.ThrowCollectionIsEmptyException<T>();
 #endif
 
-        Count--;
+        --Count;
 
-        return _components[_start + Count];
+        return _components[Start + Count];
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -99,14 +119,14 @@ public ref struct StaticBuffer<T>
             ThrowHelper.ThrowCollectionIsEmptyException<T>();
 #endif
 
-        Count--;
+        --Count;
 
-        var absoluteIndex = _start + index;
+        var absoluteIndex = Start + index;
         if (index == Count)
             return _components[absoluteIndex];
 
         var result = _components[absoluteIndex];
-        _components[absoluteIndex] = _components[_start + Count];
+        _components[absoluteIndex] = _components[Start + Count];
 
         return result;
     }
@@ -114,5 +134,16 @@ public ref struct StaticBuffer<T>
     public void Clear()
     {
         Count = 0;
+    }
+
+    [Conditional("DEBUG")]
+    private void DebugValidateBufferIsAlive()
+    {
+#if NETSTANDARD2_1
+        if(_index.Value == InvalidIndex)
+#else
+        if(_index == InvalidIndex)
+#endif
+            ThrowHelper.ThrowNotSupportedException("This ref is stale. Retrieve a new buffer for the entity.");
     }
 }

@@ -166,6 +166,22 @@ public class SparseSetTests
     }
 
     [Fact]
+    public void Components_DeleteComponent_ComponentStillInSpan()
+    {
+        var sparseSet = new SparseSet<HealthComponent>(10, 2, _resizeStrategy, _stubEntityManager);
+
+        var entityId = new EntityId(3, 1, 0);
+        sparseSet.AddComponent(entityId).Max = 42;
+        var components = sparseSet.Components;
+        components.Length.Should().Be(1);
+
+        sparseSet.SwapAndPopComponent(entityId);
+
+        sparseSet.HasComponent(entityId).Should().BeFalse();
+        components.Length.Should().Be(1);
+    }
+
+    [Fact]
     public void DeleteComponent_ComponentDoesNotExist_ShouldBeOk()
     {
         var sparseSet = new SparseSet<HealthComponent>(10, 2, _resizeStrategy, _stubEntityManager);

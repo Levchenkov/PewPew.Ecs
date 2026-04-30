@@ -4,7 +4,8 @@ public interface IComponentsInitializer :
     IComponentInitializer,
     ITagInitializer,
     ISingletonInitializer,
-    IStaticBufferInitializer
+    IStaticBufferInitializer,
+    IDynamicBufferInitializer
 {
 }
 
@@ -32,4 +33,11 @@ public interface IStaticBufferInitializer
     void InitStaticBuffer<T>() where T : struct, IStaticBufferComponent;
 
     void InitStaticBuffer<T>(int maxComponentsPerSet, int maxElementsCount) where T : struct, IStaticBufferComponent;
+}
+
+public interface IDynamicBufferInitializer
+{
+    void InitDynamicBuffer<T>() where T : struct, IDynamicBufferComponent;
+
+    void InitDynamicBuffer<T>(int maxComponentsPerSet, int initialCapacity) where T : struct, IDynamicBufferComponent;
 }

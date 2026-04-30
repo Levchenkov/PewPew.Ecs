@@ -9,6 +9,7 @@ internal class CompactStaticBufferSet<T> : IComponentCollection
     where T : struct, IStaticBufferComponent
 {
     private const int InvalidIndex = CompactSparseSet.InvalidIndex;
+    private const int StaleDenseIndex = -1;
     private const int PageShift = CompactSparseSet.PageShift;
     private const int PageSize = CompactSparseSet.PageSize;
     private const int PageMask = CompactSparseSet.PageMask;
@@ -42,7 +43,7 @@ internal class CompactStaticBufferSet<T> : IComponentCollection
         var pageCount = (maxEntitiesCount + PageSize - 1) >> PageShift;
         _sparseIndexPages = new int[pageCount][];
         _entities = new EntityId[maxComponentsCount + 1]; // 0 index element reserved for non valid dense index
-        _elementsCounts = new int[maxComponentsCount + 1];
+        _elementsCounts = new int[maxEntitiesCount];
         _components = new T[(maxComponentsCount + 1) * _maxElementsCount];
 
         Reset();
@@ -66,18 +67,19 @@ internal class CompactStaticBufferSet<T> : IComponentCollection
 
         var denseIndex = CompactSparseSet.GetDenseIndexDoNotCreatePage(_sparseIndexPages, entityId);
 
-        return denseIndex != InvalidIndex;
+        return denseIndex > 0;
     }
 
     public StaticBuffer<T> GetBuffer(EntityId entityId)
     {
         DebugValidateEntityId(entityId);
 
-        var denseIndex = CompactSparseSet.GetDenseIndexDoNotCreatePage(_sparseIndexPages, entityId);
+        ref var denseIndex = ref CompactSparseSet.GetDenseIndexDoNotCreatePage(_sparseIndexPages, entityId);
 
-        DebugValidateIndex(denseIndex, entityId);
+        if (denseIndex <= 0)
+            ThrowHelper.ThrowComponentNotFoundException<T>(entityId);
 
-        return GetBufferByIndex(denseIndex);
+        return GetBufferByIndex(ref denseIndex, entityId);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -85,26 +87,25 @@ internal class CompactStaticBufferSet<T> : IComponentCollection
     {
         DebugValidateEntityId(entityId);
 
-        var denseIndex = CompactSparseSet.GetDenseIndexDoNotCreatePage(_sparseIndexPages, entityId);
+        ref var denseIndex = ref CompactSparseSet.GetDenseIndexDoNotCreatePage(_sparseIndexPages, entityId);
 
-        if (denseIndex == InvalidIndex)
+        if (denseIndex <= 0)
         {
             staticBuffer = default;
 
             return false;
         }
 
-        staticBuffer = GetBufferByIndex(denseIndex);
+        staticBuffer = GetBufferByIndex(ref denseIndex, entityId);
 
         return true;
     }
 
-    private StaticBuffer<T> GetBufferByIndex(int index)
+    private StaticBuffer<T> GetBufferByIndex(ref int denseIndex, EntityId entityId)
     {
-        var start = index * _maxElementsCount;
-        ref var count = ref _elementsCounts[index];
+        ref var count = ref _elementsCounts[entityId.Index];
 
-        return new StaticBuffer<T>(_components, start, ref count, _maxElementsCount);
+        return new StaticBuffer<T>(_components, ref denseIndex, ref count, _maxElementsCount);
     }
 
     public StaticBuffer<T> AddBuffer(EntityId entityId)
@@ -113,17 +114,17 @@ internal class CompactStaticBufferSet<T> : IComponentCollection
 
         ref var denseIndex = ref CompactSparseSet.GetDenseIndexRefCreatePage(_sparseIndexPages, entityId);
 
-        if (denseIndex != InvalidIndex)
-            return GetBufferByIndex(denseIndex);
+        if (denseIndex > 0)
+            return GetBufferByIndex(ref denseIndex, entityId);
 
         if (_bufferCount == Capacity)
             Resize();
 
         denseIndex = ++_bufferCount;
         _entities[denseIndex] = entityId;
-        _elementsCounts[denseIndex] = 0;
+        _elementsCounts[entityId.Index] = 0;
 
-        return GetBufferByIndex(denseIndex);
+        return GetBufferByIndex(ref denseIndex, entityId);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -147,20 +148,17 @@ internal class CompactStaticBufferSet<T> : IComponentCollection
 
         ref var denseIndex = ref page[offset];
 
-        if (denseIndex == InvalidIndex)
+        if (denseIndex <= 0)
             return EntityId.Invalid;
 
 #if DEBUG
-        if (denseIndex < 0)
-            ThrowHelper.ThrowArgumentOutOfRangeException<T>(denseIndex, "Should be non negative.");
-
         if (denseIndex > _bufferCount)
             ThrowHelper.ThrowArgumentOutOfRangeException<T>(denseIndex, "Should be less than Count");
 #endif
 
         if (denseIndex == _bufferCount)
         {
-            denseIndex = InvalidIndex;
+            denseIndex = StaleDenseIndex;
 
             _bufferCount--;
 
@@ -168,16 +166,14 @@ internal class CompactStaticBufferSet<T> : IComponentCollection
         }
 
         var deletingBuffer = new Span<T>(_components, denseIndex * _maxElementsCount, _maxElementsCount);
-        var lastBuffer = new Span<T>(_components, _bufferCount * _maxElementsCount, _elementsCounts[_bufferCount]);
+        var lastBuffer = new Span<T>(_components, _bufferCount * _maxElementsCount, _elementsCounts[_entities[_bufferCount].Index]);
         lastBuffer.CopyTo(deletingBuffer);
-
-        _elementsCounts[denseIndex] = _elementsCounts[_bufferCount];
 
         var replacedEntityId = _entities[denseIndex] = _entities[_bufferCount];
 
         CompactSparseSet.GetDenseIndexRefCreatePage(_sparseIndexPages, replacedEntityId) = denseIndex; // existing entity, so no page creation
 
-        denseIndex = InvalidIndex;
+        denseIndex = StaleDenseIndex;
 
         _bufferCount--;
 
@@ -201,7 +197,6 @@ internal class CompactStaticBufferSet<T> : IComponentCollection
 
         Array.Resize(ref _components, capacity * _maxElementsCount);
         Array.Resize(ref _entities, capacity);
-        Array.Resize(ref _elementsCounts, capacity);
     }
 
     [Conditional("DEBUG")]
@@ -209,12 +204,5 @@ internal class CompactStaticBufferSet<T> : IComponentCollection
     {
         if(!_entityManager.IsAlive(entityId))
             ThrowHelper.ThrowNotSupportedException($"Component {typeof(T).Name}. Entity {entityId} is not alive.");
-    }
-
-    [Conditional("DEBUG")]
-    private void DebugValidateIndex(int index, EntityId entityId)
-    {
-        if (index == InvalidIndex)
-            ThrowHelper.ThrowComponentNotFoundException<T>(entityId);
     }
 }

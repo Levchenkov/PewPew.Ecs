@@ -7,7 +7,8 @@ public interface IHybridComponentsProvider<TMask> :
     IComponentProvider,
     ITagProvider,
     ISingletonProvider,
-    IStaticBufferProvider
+    IStaticBufferProvider,
+    IDynamicBufferProvider
     where TMask : struct, IBitMask<TMask>
 {
 }

@@ -7,4 +7,5 @@ public class WorldSettings
     public int MaxAllowedUniqueComponentsCount = 64; // limited by default, can be not limited
     public int MaxElementsCountPerSet = 100;
     public int MaxEntitiesPerGroup = ushort.MaxValue; // for group feature
+    public int InitialDynamicBufferCapacity = 4;
 }

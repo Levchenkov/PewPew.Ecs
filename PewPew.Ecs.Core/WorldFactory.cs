@@ -24,4 +24,23 @@ public class WorldFactory
 
         return world;
     }
+
+    /// <summary>
+    /// Creates a <see cref="StringStorage"/> with a unique storage ID issued by this factory.
+    /// </summary>
+    public StringStorage CreateStringStorage(int initialCapacity = 16)
+    {
+        var id = GetNextWorldId();
+        return new StringStorage(id, initialCapacity);
+    }
+
+    /// <summary>
+    /// Creates an <see cref="ObjectStorage{T}"/> with a unique storage ID issued by this factory.
+    /// </summary>
+    public ObjectStorage<T> CreateObjectStorage<T>(int initialCapacity = 16)
+        where T : class
+    {
+        var id = GetNextWorldId();
+        return new ObjectStorage<T>(id, initialCapacity);
+    }
 }

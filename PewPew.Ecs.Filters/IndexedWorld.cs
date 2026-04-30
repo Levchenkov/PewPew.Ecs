@@ -114,6 +114,12 @@ public partial class IndexedWorld<TMask> :
     public void InitStaticBuffer<T>(int maxComponentsPerSet, int maxElementsCount) where T : struct, IStaticBufferComponent
         => _world.InitStaticBuffer<T>(maxComponentsPerSet, maxElementsCount);
 
+    public void InitDynamicBuffer<T>() where T : struct, IDynamicBufferComponent
+        => _world.InitDynamicBuffer<T>();
+
+    public void InitDynamicBuffer<T>(int maxComponentsPerSet, int initialCapacity) where T : struct, IDynamicBufferComponent
+        => _world.InitDynamicBuffer<T>(maxComponentsPerSet, initialCapacity);
+
     public bool IsComponentInitialized<TComponent>()
         where TComponent : struct
         => _world.IsComponentInitialized<TComponent>();
@@ -528,6 +534,30 @@ public partial class IndexedWorld<TMask> :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void DeleteStaticBuffer<T>(EntityId entityId) where T : struct, IStaticBufferComponent =>
         _world.DeleteStaticBuffer<T>(entityId);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public DynamicBufferCollection<T> GetDynamicBuffers<T>() where T : struct, IDynamicBufferComponent =>
+        _world.GetDynamicBuffers<T>();
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool HasDynamicBuffer<T>(EntityId entityId) where T : struct, IDynamicBufferComponent =>
+        _world.HasDynamicBuffer<T>(entityId);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public DynamicBuffer<T> GetDynamicBuffer<T>(EntityId entityId) where T : struct, IDynamicBufferComponent =>
+        _world.GetDynamicBuffer<T>(entityId);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool TryGetDynamicBuffer<T>(EntityId entityId, out DynamicBuffer<T> buffer) where T : struct, IDynamicBufferComponent =>
+        _world.TryGetDynamicBuffer<T>(entityId, out buffer);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public DynamicBuffer<T> AddDynamicBuffer<T>(EntityId entityId) where T : struct, IDynamicBufferComponent =>
+        _world.AddDynamicBuffer<T>(entityId);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void DeleteDynamicBuffer<T>(EntityId entityId) where T : struct, IDynamicBufferComponent =>
+        _world.DeleteDynamicBuffer<T>(entityId);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool HasTag<T>(EntityId entityId) where T : struct, ITagComponent => _world.HasTag<T>(entityId);

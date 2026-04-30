@@ -90,6 +90,14 @@ internal static class ThrowHelper
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void ThrowNonBlittableComponentException<T>()
+    {
+        throw new NotSupportedException(
+            $"Component type '{typeof(T).FullName}' is not blittable. " +
+            "All component types must be blittable structs (no bool, char, managed references, or LayoutKind.Auto).");
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static void ThrowNotSupportedException(string message)
     {
         throw new NotSupportedException(message);

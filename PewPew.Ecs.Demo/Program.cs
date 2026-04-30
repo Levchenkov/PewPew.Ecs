@@ -19,5 +19,6 @@ Examples.SimpleSparseSet();
 // Examples.SimpleCachedFilter();
 // Examples.SimpleCommandBuffer();
 // Examples.SimpleStaticArchetype();
+ Examples.CustomArchetype();
 
 var c = "qwe";

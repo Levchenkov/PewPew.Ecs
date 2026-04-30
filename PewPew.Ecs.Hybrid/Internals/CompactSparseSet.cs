@@ -265,21 +265,23 @@ internal class CompactSparseSet
     public const int PageSize = 1 << PageShift;
     public const int PageMask = PageSize - 1;
 
+    private static int InvalidIndexRef = InvalidIndex;
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetDenseIndexDoNotCreatePage(int[]?[] sparseIndexPages, EntityId entityId)
+    public static ref int GetDenseIndexDoNotCreatePage(int[]?[] sparseIndexPages, EntityId entityId)
     {
         var entityIndex = entityId.Index;
         var pageIndex = entityIndex >> PageShift;
 
         var page = sparseIndexPages[pageIndex];
         if (page == null)
-            return InvalidIndex;
+            return ref InvalidIndexRef;
 
         var offset = entityIndex & PageMask;
 
-        var denseIndex = page[offset];
+        ref var denseIndex = ref page[offset];
 
-        return denseIndex;
+        return ref denseIndex;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

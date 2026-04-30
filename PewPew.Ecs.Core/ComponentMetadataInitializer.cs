@@ -17,6 +17,9 @@ public static class ComponentMetadataInitializer
     {
         foreach (var valueType in assembly.GetTypes().Where(x => x is { IsValueType: true, IsEnum: false }))
         {
+            if (!BlittableHelper.IsBlittable(valueType))
+                continue;
+
             if (GetSupportedComponentTypes().Any(supportedType => supportedType.IsAssignableFrom(valueType)))
             {
                 InitType(valueType);
@@ -30,6 +33,7 @@ public static class ComponentMetadataInitializer
         yield return typeof(ITagComponent);
         yield return typeof(ISingletonComponent);
         yield return typeof(IStaticBufferComponent);
+        yield return typeof(IDynamicBufferComponent);
     }
 
     private static void InitType(Type type)

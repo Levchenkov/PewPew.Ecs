@@ -18,4 +18,8 @@
         <ProjectReference Include="..\PewPew.Ecs.SourceGenerators\PewPew.Ecs.SourceGenerators.csproj" OutputItemType="Analyzer" />
     </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\PewPew.Ecs.Hybrid.SourceGenerators\PewPew.Ecs.Hybrid.SourceGenerators.csproj" OutputItemType="Analyzer" />
+    </ItemGroup>
+
 </Project>

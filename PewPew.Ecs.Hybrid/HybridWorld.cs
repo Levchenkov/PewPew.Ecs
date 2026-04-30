@@ -830,6 +830,15 @@ public partial class HybridWorld<TMask> :
         _world.InitStaticBuffer<T>(staticBufferSet);
     }
 
+    public void InitDynamicBuffer<T>() where T : struct, IDynamicBufferComponent
+        => InitDynamicBuffer<T>(_settings.MaxComponentsPerSet, _settings.InitialDynamicBufferCapacity);
+
+    public void InitDynamicBuffer<T>(int maxComponentsPerSet, int initialCapacity) where T : struct, IDynamicBufferComponent
+    {
+        var dynamicBufferSet = new CompactDynamicBufferSet<T>(_settings.MaxEntitiesCount, maxComponentsPerSet, initialCapacity, _world.ResizeStrategy, _world);
+        _world.InitDynamicBuffer<T>(dynamicBufferSet);
+    }
+
     public EntityId CreateEntityId()
     {
         return _world.CreateEntityId();
@@ -899,6 +908,16 @@ public partial class HybridWorld<TMask> :
     {
         var index = ComponentMetadata<T>.GlobalIndex;
         var set = (CompactStaticBufferSet<T>)_world.GetCollectionByGlobalIndex<T>(index);
+
+        return set;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal CompactDynamicBufferSet<T> GetDynamicBufferSet<T>()
+        where T : struct, IDynamicBufferComponent
+    {
+        var index = ComponentMetadata<T>.GlobalIndex;
+        var set = (CompactDynamicBufferSet<T>)_world.GetCollectionByGlobalIndex<T>(index);
 
         return set;
     }
@@ -1062,6 +1081,32 @@ public partial class HybridWorld<TMask> :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void DeleteStaticBuffer<T>(EntityId entityId) where T : struct, IStaticBufferComponent
         => GetStaticBufferSet<T>().DeleteBuffer(entityId);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool HasDynamicBuffer<T>(EntityId entityId) where T : struct, IDynamicBufferComponent
+        => GetDynamicBufferSet<T>().HasBuffer(entityId);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public DynamicBuffer<T> GetDynamicBuffer<T>(EntityId entityId) where T : struct, IDynamicBufferComponent
+        => GetDynamicBufferSet<T>().GetBuffer(entityId);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool TryGetDynamicBuffer<T>(EntityId entityId, out DynamicBuffer<T> buffer) where T : struct, IDynamicBufferComponent
+        => GetDynamicBufferSet<T>().TryGetBuffer(entityId, out buffer);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public DynamicBuffer<T> AddDynamicBuffer<T>(EntityId entityId) where T : struct, IDynamicBufferComponent
+    {
+        ValidateNoStaticArchetype(entityId);
+        return GetDynamicBufferSet<T>().AddBuffer(entityId);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void DeleteDynamicBuffer<T>(EntityId entityId) where T : struct, IDynamicBufferComponent
+    {
+        ValidateNoStaticArchetype(entityId);
+        GetDynamicBufferSet<T>().DeleteBuffer(entityId);
+    }
 
     public void InitCommandBufferCache<T>(int capacity = 10) where T : struct => _world.InitCommandBufferCache<T>(capacity);
 

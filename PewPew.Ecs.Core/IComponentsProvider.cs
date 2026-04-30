@@ -4,7 +4,8 @@ public interface IComponentsProvider :
     IComponentCollectionProvider,
     ITagCollectionProvider,
     ISingletonProvider,
-    IStaticBufferCollectionProvider
+    IStaticBufferCollectionProvider,
+    IDynamicBufferCollectionProvider
 {
 }
 
@@ -69,4 +70,22 @@ public interface IStaticBufferProvider
     StaticBuffer<T> AddStaticBuffer<T>(EntityId entityId) where T : struct, IStaticBufferComponent;
 
     void DeleteStaticBuffer<T>(EntityId entityId) where T : struct, IStaticBufferComponent;
+}
+
+public interface IDynamicBufferCollectionProvider : IDynamicBufferProvider
+{
+    DynamicBufferCollection<T> GetDynamicBuffers<T>() where T : struct, IDynamicBufferComponent;
+}
+
+public interface IDynamicBufferProvider
+{
+    bool HasDynamicBuffer<T>(EntityId entityId) where T : struct, IDynamicBufferComponent;
+
+    DynamicBuffer<T> GetDynamicBuffer<T>(EntityId entityId) where T : struct, IDynamicBufferComponent;
+
+    bool TryGetDynamicBuffer<T>(EntityId entityId, out DynamicBuffer<T> buffer) where T : struct, IDynamicBufferComponent;
+
+    DynamicBuffer<T> AddDynamicBuffer<T>(EntityId entityId) where T : struct, IDynamicBufferComponent;
+
+    void DeleteDynamicBuffer<T>(EntityId entityId) where T : struct, IDynamicBufferComponent;
 }

@@ -24,6 +24,17 @@ public struct Damage : IStaticBufferComponent
     public EntityId TargetId;
 }
 
+public struct DynamicEvent : IDynamicBufferComponent
+{
+    public int Value;
+}
+
+public struct DynamicDamage : IDynamicBufferComponent
+{
+    public int Value;
+    public EntityId TargetId;
+}
+
 public struct Component1 : IComponent
 {
     public int Value;
@@ -53,3 +64,30 @@ public struct Tag1 : ITagComponent {}
 public struct Tag2 : ITagComponent {}
 public struct Tag3 : ITagComponent {}
 public struct Tag4 : ITagComponent {}
+
+public struct BlittableBoolComponent : IComponent
+{
+    public BlittableBool Flag;
+    public BlittableBool OtherFlag;
+}
+
+public struct BlittableCharComponent : IComponent
+{
+    public BlittableChar Letter;
+    public BlittableChar Symbol;
+}
+
+public struct BlittableString32Component : IComponent
+{
+    public BlittableString32 Name;
+}
+
+public struct StringIdComponent : IComponent
+{
+    public StringId DescriptionId;
+}
+
+public struct ObjectIdComponent : IComponent
+{
+    public ObjectId DataId;
+}
