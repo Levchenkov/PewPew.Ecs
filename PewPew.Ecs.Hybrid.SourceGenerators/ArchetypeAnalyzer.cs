@@ -99,7 +99,10 @@ public static class ArchetypeAnalyzer
             if (member.Declaration.Type is not Microsoft.CodeAnalysis.CSharp.Syntax.RefTypeSyntax refTypeSyntax)
                 continue;
 
-            var innerTypeName = refTypeSyntax.Type.ToString();
+            var typeSymbol = semanticModel.GetTypeInfo(refTypeSyntax.Type).Type;
+            var innerTypeName = typeSymbol is not null
+                ? typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                : refTypeSyntax.Type.ToString();
 
             foreach (var variable in member.Declaration.Variables)
             {

@@ -40,7 +40,7 @@ public partial class HybridWorld<TMask> :
 
     private readonly World _world;
     private readonly FilterModule<TMask, HybridFilterInstance<TMask>>  _module;
-    private readonly Dictionary<Type, IStaticArchetypeInstance<TMask>> _typeToArchetypeMap = new();
+    internal readonly Dictionary<Type, IStaticArchetypeInstance<TMask>> _typeToArchetypeMap = new();
     private readonly Dictionary<int, Dictionary<Type, object>> _universalKeyToPartsMap = new();
     private readonly TMask[] _entityToMaskMap;
     private readonly IStaticArchetypeInstance<TMask>?[] _entityToArchetypeMap;

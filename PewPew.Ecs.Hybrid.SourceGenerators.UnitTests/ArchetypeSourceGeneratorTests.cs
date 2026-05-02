@@ -45,12 +45,12 @@ public ref struct Player
         var generatedCode = GetGeneratedCode(result, "Player.Archetype.g.cs");
         generatedCode.Should().Contain("public readonly ref struct PlayerArchetype");
         generatedCode.Should().Contain("public static class PlayerHybridWorldExtensions");
-        generatedCode.Should().Contain("public ref Position GetPosition(EntityId entityId)");
-        generatedCode.Should().Contain("public ref Speed GetSpeed(EntityId entityId)");
+        generatedCode.Should().Contain("public ref global::Demo.Position GetPosition(EntityId entityId)");
+        generatedCode.Should().Contain("public ref global::Demo.Speed GetSpeed(EntityId entityId)");
         generatedCode.Should().Contain("public static void InitPlayerArchetype(this HybridWorld<BitMask64> world)");
         generatedCode.Should().Contain("public static PlayerArchetype GetPlayerArchetype(this HybridWorld<BitMask64> world)");
-        generatedCode.Should().Contain("world.InitStaticArchetype<Position, Speed>();");
-        generatedCode.Should().Contain("var archetypeRef = world.GetStaticArchetype<Position, Speed>();");
+        generatedCode.Should().Contain("world.InitStaticArchetype<global::Demo.Position, global::Demo.Speed>();");
+        generatedCode.Should().Contain("var archetypeRef = world.GetStaticArchetype<global::Demo.Position, global::Demo.Speed>();");
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public ref struct Hero
 
         var generatedCode = GetGeneratedCode(result, "Hero.Archetype.g.cs");
         generatedCode.Should().Contain("public readonly ref struct HeroPack");
-        generatedCode.Should().Contain("private readonly StaticArchetype<BitMask128, Position, Speed> _archetype;");
+        generatedCode.Should().Contain("private readonly StaticArchetype<BitMask128, global::Demo.Position, global::Demo.Speed> _archetype;");
         generatedCode.Should().Contain("public static void InitHeroPack(this HybridWorld<BitMask128> world)");
         generatedCode.Should().Contain("public static HeroPack GetHeroPack(this HybridWorld<BitMask128> world)");
     }
@@ -117,6 +117,47 @@ public ref struct Broken
 
         result.GeneratedSources.Should().ContainSingle(x => x.HintName == "PewPew.Ecs.Hybrid.ArchetypeAttribute.g.cs");
         result.GeneratedSources.Should().NotContain(x => x.HintName == "Broken.Archetype.g.cs");
+    }
+
+    [Fact]
+    public void Uses_fully_qualified_type_names_for_components_in_different_namespace()
+    {
+        const string source = """
+namespace Game.Components
+{
+    using PewPew.Ecs.Core;
+    public struct Position : IComponent { }
+    public struct Velocity : IComponent { }
+}
+
+namespace Game.Archetypes
+{
+    using PewPew.Ecs.Core;
+
+    [PewPew.Ecs.Hybrid.Archetype]
+    public ref struct Mover
+    {
+        public ref Game.Components.Position Position;
+        public ref Game.Components.Velocity Velocity;
+
+        public Mover(ref Game.Components.Position position, ref Game.Components.Velocity velocity)
+        {
+            Position = ref position;
+            Velocity = ref velocity;
+        }
+    }
+}
+""";
+
+        var result = RunGenerator(source, out _);
+
+        result.GeneratedSources.Should().Contain(x => x.HintName == "Mover.Archetype.g.cs");
+
+        var generatedCode = GetGeneratedCode(result, "Mover.Archetype.g.cs");
+        generatedCode.Should().Contain("global::Game.Components.Position");
+        generatedCode.Should().Contain("global::Game.Components.Velocity");
+        generatedCode.Should().Contain("public readonly ref struct MoverArchetype");
+        generatedCode.Should().Contain("public static class MoverHybridWorldExtensions");
     }
 
     private static GeneratorRunResult RunGenerator(string source, out Compilation outputCompilation)

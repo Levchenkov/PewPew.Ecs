@@ -49,19 +49,17 @@ public readonly struct MovementBatchQuery : IBatchQuery<Position, Speed>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void BatchUpdate(Span<Position> positions, Span<Speed> speeds)
     {
-        Span<float> floatPositions = MemoryMarshal.Cast<Position, float>(positions);
-        Span<float> floatSpeeds = MemoryMarshal.Cast<Speed, float>(speeds);
+        int vectorCount = Vector<float>.Count; // 8
+        int length = positions.Length - positions.Length % vectorCount;
 
-        int length = floatPositions.Length - floatPositions.Length % 8;
+        Span<Vector<float>> positionVectors = MemoryMarshal.Cast<Position, Vector<float>>(positions.Slice(0, length));
+        Span<Vector<float>> speedVectors = MemoryMarshal.Cast<Speed, Vector<float>>(speeds.Slice(0, length));
 
-        Span<Vector256<float>> ints = MemoryMarshal.Cast<float, Vector256<float>>(floatPositions.Slice(0, length));
-        Span<Vector256<float>> a = MemoryMarshal.Cast<float, Vector256<float>>(floatSpeeds.Slice(0, length));
+        for (int i = 0; i < positionVectors.Length; i++)
+            positionVectors[i] += speedVectors[i];
 
-        for (int i = 0; i < ints.Length; i++)
-            ints[i] += a[i];
-
-        for (int i = length; i < floatPositions.Length; i++)
-            floatPositions[i] += floatSpeeds[i];
+        for (int i = length; i < positions.Length; i++)
+            positions[i].Vector += speeds[i].Vector;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

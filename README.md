@@ -1,5 +1,10 @@
 # PewPew.Ecs
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Status: Alpha](https://img.shields.io/badge/Status-Alpha-orange.svg)]()
+
+> ⚠️ **This project is in alpha stage and is not production-ready.** API can be changed and there may be bugs. Use at your own risk.
+
 PewPew.Ecs is an ECS library built around sparse-set storage, allocation-free iteration, and explicit control over world layout.
 
 It supports multiple worlds in one state, indexed filters, hybrid static archetypes, command buffers, and source-generated archetype wrappers.
@@ -32,6 +37,16 @@ speed.Vector = new Vector3(1, 1, 1);
 // update components
 world.ExecuteQuery((EntityId entityId, ref Position position, ref Speed speed) => position.Vector += speed.Vector);
 ```
+    
+## Installation
+
+```powershell
+dotnet add package PewPew.Ecs # inclides all packages
+dotnet add package PewPew.Ecs.Core # base world only
+dotnet add package PewPew.Ecs.Filters # indexed worlds and filters
+dotnet add package PewPew.Ecs.Hybrid # hybrid worlds, filters and static archetypes
+```
+
 
 ## Example-driven documentation
 

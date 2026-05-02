@@ -8,4 +8,15 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <PackageId>PewPew.Ecs.Core</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>Eugene Levchenkov</Authors>
+        <Title>PewPew.Ecs.Core</Title>
+        <Description>ECS library built around sparse-set storage</Description>
+        <PackageProjectUrl>https://github.com/Levchenkov/PewPew.Ecs</PackageProjectUrl>
+        <PackageLicenseUrl>https://github.com/Levchenkov/PewPew.Ecs/blob/main/LICENSE</PackageLicenseUrl>
+        <PackageTags>ecs sparse-set game-dev</PackageTags>
+    </PropertyGroup>
+
 </Project>

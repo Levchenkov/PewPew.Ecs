@@ -20,6 +20,12 @@ public interface IQuery<T1, T2, T3>
     void Update(EntityId entityId, ref T1 component1, ref T2 component2, ref T3 component3);
 }
 
+public interface IQueryWithoutId<T1>
+    where T1 : struct, IComponent
+{
+    void Update(ref T1 component1);
+}
+
 public interface IQueryWithoutId<T1, T2>
     where T1 : struct, IComponent
     where T2 : struct, IComponent

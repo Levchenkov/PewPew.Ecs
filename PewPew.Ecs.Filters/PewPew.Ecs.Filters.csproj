@@ -7,6 +7,17 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <PackageId>PewPew.Ecs.Filters</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>Eugene Levchenkov</Authors>
+        <Title>PewPew.Ecs.Fitlers</Title>
+        <Description>Filters for PewPew.Ecs library</Description>
+        <PackageProjectUrl>https://github.com/Levchenkov/PewPew.Ecs</PackageProjectUrl>
+        <PackageLicenseUrl>https://github.com/Levchenkov/PewPew.Ecs/blob/main/LICENSE</PackageLicenseUrl>
+        <PackageTags>ecs sparse-set game-dev ecs-filters</PackageTags>
+    </PropertyGroup>
+
     <ItemGroup>
       <ProjectReference Include="..\PewPew.Ecs.Core\PewPew.Ecs.Core.csproj" />
     </ItemGroup>

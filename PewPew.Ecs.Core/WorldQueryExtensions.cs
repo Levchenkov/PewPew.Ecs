@@ -129,32 +129,6 @@ public static class WorldQueryExtensions
         }
     }
 
-    // public static void ExecuteQuery<T1>(this World world, QueryAction<T1> queryAction)
-    //     where T1 : struct, IComponent
-    // {
-    //     var queryActionContainer = new QueryActionContainer<T1>(queryAction);
-    //
-    //     ExecuteQuery<QueryActionContainer<T1>, T1>(world, queryActionContainer);
-    // }
-
-    // todo: benchmark
-    private readonly struct QueryActionContainer<T> : IQuery<T>
-        where T : struct, IComponent
-    {
-        private readonly QueryAction<T> _queryAction;
-
-        public QueryActionContainer(QueryAction<T> queryAction)
-        {
-            _queryAction = queryAction;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Update(EntityId entityId, ref T component1)
-        {
-            _queryAction(entityId, ref component1);
-        }
-    }
-
     public static void ExecuteQuery<TQ, T1>(this World world, TQ query)
         where TQ : IQuery<T1>
         where T1 : struct, IComponent
@@ -220,6 +194,18 @@ public static class WorldQueryExtensions
             }
 
             query.Update(entityId, ref componentRef1.Component, ref componentRef2.Component, ref components[i]);
+        }
+    }
+
+    public static void ExecuteQueryWithoutId<TQ, T1>(this World world, TQ query)
+        where TQ : IQueryWithoutId<T1>
+        where T1 : struct, IComponent
+    {
+        var sparseSet1 = world.GetSparseSet<T1>();
+        var components = sparseSet1.Components;
+        for (int i = 0; i < sparseSet1.Count; i++)
+        {
+            query.Update(ref components[i]);
         }
     }
 

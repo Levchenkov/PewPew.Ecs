@@ -7,6 +7,17 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <PackageId>PewPew.Ecs.Hybrid</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>Eugene Levchenkov</Authors>
+        <Title>PewPew.Ecs.Hybrid</Title>
+        <Description>Static Archetypes for PewPew.Ecs library</Description>
+        <PackageProjectUrl>https://github.com/Levchenkov/PewPew.Ecs</PackageProjectUrl>
+        <PackageLicenseUrl>https://github.com/Levchenkov/PewPew.Ecs/blob/main/LICENSE</PackageLicenseUrl>
+        <PackageTags>ecs sparse-set game-dev ecs-filters static-archetype</PackageTags>
+    </PropertyGroup>
+
     <ItemGroup>
       <ProjectReference Include="..\PewPew.Ecs.Core\PewPew.Ecs.Core.csproj" />
       <ProjectReference Include="..\PewPew.Ecs.Filters\PewPew.Ecs.Filters.csproj" />
@@ -15,11 +26,24 @@
     <Import Project="../PewPew.Ecs.Filters/ProjectSettings.props" />
 
     <ItemGroup>
-        <ProjectReference Include="..\PewPew.Ecs.SourceGenerators\PewPew.Ecs.SourceGenerators.csproj" OutputItemType="Analyzer" />
+        <!-- ReferenceOutputAssembly=true because Hybrid uses attribute types from this assembly directly -->
+        <ProjectReference Include="..\PewPew.Ecs.SourceGenerators\PewPew.Ecs.SourceGenerators.csproj"
+                          OutputItemType="Analyzer"
+                          PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\PewPew.Ecs.Hybrid.SourceGenerators\PewPew.Ecs.Hybrid.SourceGenerators.csproj" OutputItemType="Analyzer" />
+        <ProjectReference Include="..\PewPew.Ecs.Hybrid.SourceGenerators\PewPew.Ecs.Hybrid.SourceGenerators.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false"
+                          PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\PewPew.Ecs.SourceGenerators\bin\$(Configuration)\netstandard2.0\PewPew.Ecs.SourceGenerators.dll"
+              Pack="true" PackagePath="analyzers/dotnet/cs/" />
+        <None Include="..\PewPew.Ecs.Hybrid.SourceGenerators\bin\$(Configuration)\netstandard2.0\PewPew.Ecs.Hybrid.SourceGenerators.dll"
+              Pack="true" PackagePath="analyzers/dotnet/cs/" />
     </ItemGroup>
 
 </Project>

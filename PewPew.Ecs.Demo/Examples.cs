@@ -52,7 +52,7 @@ public static class Examples
         // see HealthRegenSystem
         // see DamageSystem
     }
-    
+
     public static void Example3()
     {
         // as mask you can use BitMask64, BitMask128 or BitMask256 structures
@@ -412,8 +412,8 @@ public static class Examples
 
             int length = floatPositions.Length - floatPositions.Length % 8;
 
-            Span<Vector256<float>> ints = MemoryMarshal.Cast<float, Vector256<float>>(floatPositions.Slice(0, length));
-            Span<Vector256<float>> a = MemoryMarshal.Cast<float, Vector256<float>>(floatSpeeds.Slice(0, length));
+            Span<Vector<float>> ints = MemoryMarshal.Cast<float, Vector<float>>(floatPositions.Slice(0, length));
+            Span<Vector<float>> a = MemoryMarshal.Cast<float, Vector<float>>(floatSpeeds.Slice(0, length));
 
             for (int i = 0; i < ints.Length; i++)
                 ints[i] += a[i];

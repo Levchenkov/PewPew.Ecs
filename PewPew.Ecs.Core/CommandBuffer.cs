@@ -48,9 +48,14 @@ public struct CommandBuffer<T> : IDisposable
         }
     }
 
-    public void Dispose()
+    public void Apply()
     {
         _commandBufferApplier.Apply(this);
+    }
+
+    public void Dispose()
+    {
+        Apply();
     }
 
     [Conditional("DEBUG")]
