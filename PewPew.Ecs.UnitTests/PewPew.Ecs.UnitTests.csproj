@@ -29,4 +29,16 @@
       <ProjectReference Include="..\PewPew.Ecs.Hybrid\PewPew.Ecs.Hybrid.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\PewPew.Ecs.Hybrid.SourceGenerators\PewPew.Ecs.Hybrid.SourceGenerators.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false"
+                          PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\PewPew.Ecs.Hybrid.SourceGenerators\bin\$(Configuration)\netstandard2.0\PewPew.Ecs.Hybrid.SourceGenerators.dll"
+              Pack="true" PackagePath="analyzers/dotnet/cs/" />
+    </ItemGroup>
+
 </Project>

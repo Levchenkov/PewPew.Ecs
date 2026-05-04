@@ -676,7 +676,7 @@ DynamicBufferCollection<DamageEvent> collection = world.GetDynamicBuffers<Damage
 
 for (int i = 0; i < collection.BufferCount; i++)
 {
-    EntityId entity = collection.Entities[i];~~~~
+    EntityId entity = collection.Entities[i];
     DynamicBuffer<DamageEvent> buf = collection.GetBuffer(entity);
     // process buf...
     buf.Clear();

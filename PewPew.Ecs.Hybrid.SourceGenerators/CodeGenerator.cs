@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace PewPew.Ecs.Hybrid.SourceGenerators;
@@ -6,10 +7,11 @@ namespace PewPew.Ecs.Hybrid.SourceGenerators;
 // todo: use different way to generate code. This variant is unreadable
 public class CodeGenerator
 {
-    public string GenerateAllCode(ArchetypeInfo info)
+    public string GenerateAllCode(ArchetypeInfo info, IReadOnlyList<ArchetypeInfo> allInfos)
     {
         var sb = new StringBuilder();
 
+        sb.AppendLine("using System;");
         sb.AppendLine("using System.Runtime.CompilerServices;");
         sb.AppendLine("using PewPew.Ecs.Core;");
         sb.AppendLine("using PewPew.Ecs.Filters.Masks;");
@@ -22,14 +24,14 @@ public class CodeGenerator
             sb.AppendLine();
         }
 
-        sb.Append(GenerateArchetypeRefStruct(info));
+        sb.Append(GenerateArchetypeRefStruct(info, allInfos));
         sb.AppendLine();
         sb.Append(GenerateExtensionsClass(info));
 
         return sb.ToString();
     }
 
-    private string GenerateArchetypeRefStruct(ArchetypeInfo info)
+    private string GenerateArchetypeRefStruct(ArchetypeInfo info, IReadOnlyList<ArchetypeInfo> allInfos)
     {
         var sb = new StringBuilder();
         var componentsGenericArgs = string.Join(", ", info.Fields.Select(f => f.TypeName));
@@ -85,6 +87,75 @@ public class CodeGenerator
         sb.AppendLine($"        return new {info.ValueTypeName}(");
         sb.AppendLine($"            {returnParams});");
         sb.AppendLine("    }");
+        sb.AppendLine();
+
+        // Count property
+        sb.AppendLine("    public int Count");
+        sb.AppendLine("    {");
+        sb.AppendLine("        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+        sb.AppendLine("        get => _archetype.Count;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        // Entities property
+        sb.AppendLine("    public Span<EntityId> Entities");
+        sb.AppendLine("    {");
+        sb.AppendLine("        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+        sb.AppendLine("        get => _archetype.Entities;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        // Has method
+        sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+        sb.AppendLine("    public bool Has(EntityId entityId) => _archetype.Has(entityId);");
+        sb.AppendLine();
+
+        // TryGetComponents method
+        var componentRefType = $"ComponentRef<{componentsGenericArgs}>";
+        sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+        sb.AppendLine($"    public bool TryGetComponents(EntityId entityId, out {componentRefType} componentRef)");
+        sb.AppendLine("        => _archetype.TryGetComponents(entityId, out componentRef);");
+        sb.AppendLine();
+
+        // Create method
+        sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+        sb.AppendLine("    public void Create(EntityId entityId) => _archetype.Create(entityId);");
+        sb.AppendLine();
+
+        // Delete method
+        sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+        sb.AppendLine("    public void Delete(EntityId entityId) => _archetype.Delete(entityId);");
+        sb.AppendLine();
+
+        // MoveEntityTo method — underlying StaticArchetype.MoveEntityTo hardcodes BitMask64 as the target mask
+        sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+        sb.AppendLine($"    public void MoveEntityTo(EntityId entityId, StaticArchetype<BitMask64, {componentsGenericArgs}> target)");
+        sb.AppendLine("        => _archetype.MoveEntityTo(entityId, target);");
+        sb.AppendLine();
+
+        // Cross-archetype MoveEntityTo overloads — all other BitMask64 archetypes in the compilation
+        foreach (var target in allInfos.Where(t => t != info && t.MaskType == "BitMask64"))
+        {
+            var targetFullName = string.IsNullOrEmpty(target.Namespace)
+                ? target.ArchetypeName
+                : $"global::{target.Namespace}.{target.ArchetypeName}";
+            sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+            sb.AppendLine($"    public void MoveEntityTo(EntityId entityId, {targetFullName} target)");
+            sb.AppendLine($"        => _archetype.MoveEntityTo(entityId, target.Archetype);");
+            sb.AppendLine();
+        }
+
+        // Archetype property — exposes inner StaticArchetype for interop with MoveEntityTo across archetypes
+        sb.AppendLine($"    internal StaticArchetype<{info.MaskType}, {componentsGenericArgs}> Archetype");
+        sb.AppendLine("    {");
+        sb.AppendLine("        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+        sb.AppendLine("        get => _archetype;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        // MoveEntityToWorld method
+        sb.AppendLine("    [MethodImpl(MethodImplOptions.AggressiveInlining)]");
+        sb.AppendLine("    public void MoveEntityToWorld(EntityId entityId) => _archetype.MoveEntityToWorld(entityId);");
         sb.AppendLine("}");
 
         return sb.ToString();

@@ -1,4 +1,5 @@
-﻿using PewPew.Ecs.Core;
+﻿using System.Runtime.CompilerServices;
+using PewPew.Ecs.Core;
 using PewPew.Ecs.Core.Internals;
 using PewPew.Ecs.Filters;
 using PewPew.Ecs.Filters.Masks;
@@ -13,9 +14,15 @@ public static class HybridWorldQueryExtensions
     {
         var sparseSet1 = world.GetSparseSet<T1>();
         var components = sparseSet1.Components;
-        for (int i = 0; i < sparseSet1.Count; i++)
+
+        ref var component = ref components[0];
+        var length = components.Length;
+
+        for (int index = 0; index < length; index++)
         {
-            query.Update(ref components[i]);
+            query.Update(ref component);
+
+            component = ref Unsafe.Add(ref component, 1);
         }
     }
 
@@ -42,9 +49,15 @@ public static class HybridWorldQueryExtensions
         where TQ : IBatchQuery<T1>
         where T1 : struct, IComponent
     {
-        var localIndex = world.GetLocalIndex(ComponentMetadata<T1>.GlobalIndex);
+        var globalIndex = ComponentMetadata<T1>.GlobalIndex;
+        if (globalIndex == ComponentMetadata.InvalidIndex)
+        {
+            throw new NotSupportedException($"Component {typeof(T1).Name} is not initialized");
+        }
+
+        var localIndex = world.GetLocalIndex(globalIndex);
         var mask = default(BitMask64);
-        if (localIndex == -1)
+        if (localIndex == ComponentMetadata.InvalidIndex)
         {
             throw new NotSupportedException($"Component {typeof(T1).Name} is not initialized");
         }
@@ -62,10 +75,7 @@ public static class HybridWorldQueryExtensions
 
         var sparseSet1 = world.GetSparseSet<T1>();
         var components = sparseSet1.Components;
-        for (int i = 0; i < sparseSet1.Count; i++)
-        {
-            query.SparseUpdate(ref components[i]);
-        }
+        query.BatchUpdate(components);
     }
 
     public static void ExecuteBatchQuery<TQ, T1, T2>(this HybridWorld world, FilterDefinition definition, TQ query)

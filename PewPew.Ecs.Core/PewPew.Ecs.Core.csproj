@@ -10,7 +10,6 @@
 
     <PropertyGroup>
         <PackageId>PewPew.Ecs.Core</PackageId>
-        <Version>1.0.0</Version>
         <Authors>Eugene Levchenkov</Authors>
         <Title>PewPew.Ecs.Core</Title>
         <Description>ECS library built around sparse-set storage</Description>

@@ -1,4 +1,6 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace PewPew.Ecs.Hybrid.SourceGenerators;
@@ -38,8 +40,9 @@ namespace PewPew.Ecs.Hybrid
 
         context.RegisterSourceOutput(provider, (ctx, infos) =>
         {
-            foreach (var info in infos.OfType<ArchetypeInfo>())
-                GenerateArchetype(ctx, info);
+            var allInfos = infos.OfType<ArchetypeInfo>().ToList();
+            foreach (var info in allInfos)
+                GenerateArchetype(ctx, info, allInfos);
         });
     }
 
@@ -65,9 +68,9 @@ namespace PewPew.Ecs.Hybrid
         return null;
     }
 
-    private static void GenerateArchetype(SourceProductionContext context, ArchetypeInfo info)
+    private static void GenerateArchetype(SourceProductionContext context, ArchetypeInfo info, IReadOnlyList<ArchetypeInfo> allInfos)
     {
-        var code = new CodeGenerator().GenerateAllCode(info);
+        var code = new CodeGenerator().GenerateAllCode(info, allInfos);
         context.AddSource($"{info.ClassName}.Archetype.g.cs", code);
     }
 }

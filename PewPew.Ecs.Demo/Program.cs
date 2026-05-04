@@ -21,4 +21,6 @@ Examples.SimpleSparseSet();
 // Examples.SimpleStaticArchetype();
  Examples.CustomArchetype();
 
-var c = "qwe";
+
+
+
