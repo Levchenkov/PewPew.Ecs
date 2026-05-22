@@ -160,6 +160,58 @@ namespace Game.Archetypes
         generatedCode.Should().Contain("public static class MoverHybridWorldExtensions");
     }
 
+    [Fact]
+    public void Generates_cross_arity_MoveEntityTo_overloads_for_different_component_count_archetypes()
+    {
+        const string source = """
+namespace Demo;
+
+using PewPew.Ecs.Core;
+
+public struct Position : IComponent { }
+public struct Speed : IComponent { }
+public struct Health : IComponent { }
+
+[PewPew.Ecs.Hybrid.Archetype]
+public ref struct TwoComp
+{
+    public ref Position Position;
+    public ref Speed Speed;
+
+    public TwoComp(ref Position p, ref Speed s) { Position = ref p; Speed = ref s; }
+}
+
+[PewPew.Ecs.Hybrid.Archetype]
+public ref struct ThreeComp
+{
+    public ref Position Position;
+    public ref Speed Speed;
+    public ref Health Health;
+
+    public ThreeComp(ref Position p, ref Speed s, ref Health h) { Position = ref p; Speed = ref s; Health = ref h; }
+}
+""";
+
+        var result = RunGenerator(source, out var outputCompilation);
+
+        // Both archetypes should be generated
+        result.GeneratedSources.Should().Contain(x => x.HintName == "TwoComp.Archetype.g.cs");
+        result.GeneratedSources.Should().Contain(x => x.HintName == "ThreeComp.Archetype.g.cs");
+
+        // TwoComp should have a MoveEntityTo overload that accepts ThreeCompArchetype
+        var twoCompCode = GetGeneratedCode(result, "TwoComp.Archetype.g.cs");
+        twoCompCode.Should().Contain("public void MoveEntityTo(EntityId entityId, global::Demo.ThreeCompArchetype target)");
+
+        // ThreeComp should have a MoveEntityTo overload that accepts TwoCompArchetype
+        var threeCompCode = GetGeneratedCode(result, "ThreeComp.Archetype.g.cs");
+        threeCompCode.Should().Contain("public void MoveEntityTo(EntityId entityId, global::Demo.TwoCompArchetype target)");
+
+        // The output compilation should have no errors (cross-arity overloads resolve at compile time)
+        outputCompilation.GetDiagnostics()
+            .Where(x => x.Severity == DiagnosticSeverity.Error)
+            .Should().BeEmpty();
+    }
+
     private static GeneratorRunResult RunGenerator(string source, out Compilation outputCompilation)
     {
         var parseOptions = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Preview);

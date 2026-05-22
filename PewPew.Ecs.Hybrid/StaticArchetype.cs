@@ -138,4 +138,10 @@ public readonly ref partial struct StaticArchetype<TMask, T1, T2/*{GenericParame
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void MoveEntityToWorld(EntityId entityId) => _instance.MoveEntityToWorld(entityId);
+
+    internal StaticArchetypeInstance<TMask, T1, T2/*{GenericParameters}*/> Instance
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _instance;
+    }
 }

@@ -111,4 +111,64 @@ public class StaticArchetypeTests
         tuple2.Component1.Value.Should().Be(42);
         tuple2.Component2.Value.Should().Be(69);
     }
+
+    [Fact]
+    public void StaticArchetype_CrossArity_MoveEntityTo_SharedComponentsCopied_NewComponentsDefault()
+    {
+        var world = WorldFactory.Shared.CreateHybridWorld();
+
+        world.InitStaticArchetype<Component1, Component2>();
+        world.InitStaticArchetype<Component1, Component2, Component3>();
+
+        var archetype2 = world.GetStaticArchetype<Component1, Component2>();
+        var archetype3 = world.GetStaticArchetype<Component1, Component2, Component3>();
+
+        var entityId = world.CreateEntityId();
+        var added = archetype2.Add(entityId);
+        added.Component1.Value = 10;
+        added.Component2.Value = 20;
+
+        archetype2.Has(entityId).Should().BeTrue();
+        archetype3.Has(entityId).Should().BeFalse();
+
+        archetype2.MoveEntityTo(entityId, archetype3);
+
+        archetype2.Has(entityId).Should().BeFalse();
+        archetype3.Has(entityId).Should().BeTrue();
+
+        var result = archetype3.Get(entityId);
+        result.Component1.Value.Should().Be(10);
+        result.Component2.Value.Should().Be(20);
+        result.Component3.Value.Should().Be(default(int)); // new component, default value
+    }
+
+    [Fact]
+    public void StaticArchetype_CrossArity_MoveEntityTo_T3ToT2_SharedComponentCopied()
+    {
+        var world = WorldFactory.Shared.CreateHybridWorld();
+
+        world.InitStaticArchetype<Component1, Component2, Component3>();
+        world.InitStaticArchetype<Component2, Component3>();
+
+        var archetype3 = world.GetStaticArchetype<Component1, Component2, Component3>();
+        var archetype2 = world.GetStaticArchetype<Component2, Component3>();
+
+        var entityId = world.CreateEntityId();
+        var added = archetype3.Add(entityId);
+        added.Component1.Value = 5;
+        added.Component2.Value = 15;
+        added.Component3.Value = 25;
+
+        archetype3.Has(entityId).Should().BeTrue();
+        archetype2.Has(entityId).Should().BeFalse();
+
+        archetype3.MoveEntityTo(entityId, archetype2);
+
+        archetype3.Has(entityId).Should().BeFalse();
+        archetype2.Has(entityId).Should().BeTrue();
+
+        var result = archetype2.Get(entityId);
+        result.Component1.Value.Should().Be(15); // Component2 from source maps to Component1 in target
+        result.Component2.Value.Should().Be(25); // Component3 from source maps to Component2 in target
+    }
 }
